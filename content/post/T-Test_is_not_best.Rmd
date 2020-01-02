@@ -1,0 +1,278 @@
+---
+title: "T-Test is not BEST"
+author: "Rishi Sadhir"
+date: 2020-01-01T21:48:51-07:00
+categories: ["R", "Bayesian", "Statistics"]
+tags: ["R", "Bayesian", "Statistics"]
+---
+
+# Introduction
+
+In this post, we explore the task of comparing groups of measurements. Everyone knows about the T-Test and everyone uses it. Yet, there are better methods for drawing inferences from two independent groups’ (Kruschke, 2013; Morey & Rouder, 2015). Let’s talk about how “Bayesian estimation supersedes the t-test” (Kruschke, 2013).
+
+In that article (Bayesian estimation supersedes the t-test) Kruschke (2013) provided clear and well-reasoned arguments favoring Bayesian parameter estimation over null hypothesis significance testing in the context of comparing two groups, a situation which is usually dealt with a t-test. It also introduced a robust model for comparing two groups, which modeled the data as t-distributed, instead of a Gaussian distribution.
+
+Kruschke (2013, p.573) writes:
+> “When data are interpreted in terms of meaningful parameters in a mathematical description, such as the difference of mean parameters in two groups, it is Bayesian analysis that provides complete information about the credible parameter values. Bayesian analysis is also more intuitive than traditional methods of null hypothesis significance testing (e.g., Dienes, 2011).”
+
+In this post, we'll encode Kruschke's methods in STAN and use it to compare action move ratings versus comedy movie ratings. The code shown below is also available in python [here](https://github.com/RishiSadhir/T-Test-is-not-BEST/blob/master/T-Test%20is%20not%20best.ipynb) along with the supporting CSV. We make liberal use of the tidyverse grouping of R packages to carry out our analysis. Those unfamiliar can reference the excellent [R4DS](https://r4ds.had.co.nz/) book by Hadley Wickham.
+
+
+```{r setup}
+library(tidyverse)
+library(patchwork) # Stitch together ggplots
+library(viridis) # Be colorblind friendly 
+library(rstan) # Make calls to STAN
+library(tidybayes) # Work with bayesian posteriors
+
+options(mc.cores = parallel::detectCores())
+rstan_options(auto_write = TRUE)
+
+theme_minimal() %+replace%
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.background = element_rect(color = "transparent", fill = "grey90")) %>% 
+  theme_set()
+```
+
+Lets load our data set from the `ggplot2movies` package. This dataset contains 28819 movies from IMDB. We'll use it to compare the rating of action movies vs. comedy movies.
+```{r}
+library(ggplot2movies)
+
+# Clean up data
+set.seed(1234)  # Set seed so we get the same sampled rows every time
+movies_clean <- movies %>% 
+  select(title, year, rating, Action, Comedy) %>% 
+  filter(!(Action == 1 & Comedy == 1)) %>% 
+  mutate(genre = case_when(Action == 1 ~ "Action",
+                           Comedy == 1 ~ "Comedy",
+                           TRUE ~ "Neither")) %>%
+  filter(genre != "Neither") %>%
+  group_by(genre) %>% 
+  sample_n(200) %>% 
+  ungroup() %>% 
+  select(-Action, -Comedy)
+
+head(movies_clean)
+```
+
+We are interested in analyzing the difference in these two groups. Are they statistically significantly different or is it just noise?
+```{r fig.height=2.5, fig.width=5}
+ggplot(movies_clean, aes(x = rating, y = fct_rev(genre), fill = genre)) +
+  geom_halfeyeh() +
+  theme(panel.grid.major.x = element_line(color = "white"),
+        legend.position = "none") +
+  scale_x_continuous(breaks = 0:10) +
+  scale_fill_manual(values = viridis::inferno(5, alpha = .6)[c(3,4)]) +
+  ylab("") + xlab("Rating") + ggtitle("Observed ratings by genre")
+```
+
+Although they look very similar visually, a t-test tells us that they are in fact statistically significantly different with 95% confidence.
+```{r}
+t.test(filter(movies_clean, genre == "Comedy")$rating,
+       filter(movies_clean, genre == "Action")$rating) %>% 
+  print
+```
+
+# Modeling
+
+Now lets go bayesian. In the bayesian mindset, you want to model the actual data generating process. We describe that mathematically below. A key thing to notice - We are free to look further than just the first moment of our observed distrbutions. STAN lets us flexibly model the mean, standard deviation, and degrees of freedom separately.
+
+$$
+\begin{align}
+rating &\sim student\_t(\nu, \mu_i, \sigma_i) \\
+\mu_i &= \alpha_{group[i]} \\
+\sigma_i &= \gamma_{group[i]} \\
+\nu &\sim cauchy(0, 1) \\
+\alpha &\sim normal(5.5, 2) \\
+\sigma &\sim cauchy(0, 1) \\
+\end{align}
+$$
+
+We encode this math in STAN below. If you aren't use to seeing stan code, I'll provide a very high level overview of what you're looking at. The first `data` block describes the what we are going to pass in from R. Note that we include both scalars and vectors here. `transformed data` does some light preprocessing to create sane priors. Priors are a bayesian concept that lets you encode prior information you have in to your model. In this case, we ask it to be a bit skeptical of group differences by assuming the ensemble mean and standard deviation. The `parameters` section outline what STAN is search over - we have an intercept for each groups mean and an intercept for each groups standard deviation. The `model` section is where we encode the models log-likelihood. It tells STAN how good a candidate set of parameter values is at describing the data.
+
+```{stan output.var = "stan_best"}
+data {
+  int<lower=1> N;                           // Sample size
+  int<lower=2> n_groups;                    // Number of groups
+  vector[N] rating;                         // Outcome variable
+  int<lower=1, upper=n_groups> group_id[N]; // Group variable
+}
+transformed data {
+  real mean_rating;
+  real sd_rating;
+  mean_rating = mean(rating);
+  sd_rating = sd(rating);
+}
+parameters {
+  vector<lower=0,upper=10>[n_groups] alpha; // Group means 
+  vector<lower=0>[n_groups] gamma;          // Group sds
+  real<lower=0, upper=100> nu;              // df for t distribution
+}
+model {
+  real location;
+  real scale;
+  
+  alpha ~ normal(mean_rating, sd_rating);
+  gamma ~ cauchy(0, 1);
+  nu ~ cauchy(0, 1);
+  
+  for (n in 1:N){
+    location = alpha[group_id[n]];
+    scale = gamma[group_id[n]];
+    rating[n] ~ student_t(nu, location, scale);
+  }
+}
+generated quantities {
+  // Mean difference
+  real mu_diff;
+  real sigma_diff;
+  mu_diff = alpha[1] - alpha[2];
+  sigma_diff = gamma[1] - gamma[2];
+}
+```
+
+Now then... Lets set up our data to comply with the `data` block above and pass it over to STAN to perform MCMC sampling. We set up our index variables such that group_id 1 maps to comedy and group_id 2 maps to action.
+
+```{r}
+dlist <- list(
+  N = nrow(movies_clean),
+  n_groups = length(unique(movies_clean$genre)),
+  rating = movies_clean$rating,
+  group_id = as.integer(fct_rev(movies_clean$genre)))
+
+fit <- sampling(stan_best, data = dlist, 
+                chains = 4, cores = 4, refresh = 0)
+fit
+```
+
+MCMC sampling is really cool. It basically "randomly" explores the parameter space in proportion to the how likely sets of parameters are. This exploration is graphed below for the intercepts in our model.
+
+```{r fig.height=5, fig.width=10}
+post <- fit %>% 
+  gather_draws(`(alpha.*|gamma.*)`, regex = TRUE) %>%
+  mutate(chain = as.factor(.chain))
+
+p1 <- post %>% 
+  ggplot(aes(x = .iteration, y = .value, color = chain)) +
+    geom_line(alpha = .3) +
+    facet_wrap(~ .variable, scales = "free") +
+    scale_color_viridis_d() +
+    labs(x = "iteration", y = "value",
+         title = "Four chains explore the parameter space\nin parallel") +
+    theme(legend.position = "none",
+          panel.grid.major.y = element_line(color = "white"))
+
+p2 <- post %>% 
+  mutate(.chain = as.factor(.chain)) %>% 
+  group_by(.variable, .chain) %>% 
+  mutate(.value = cummean(.value)) %>% 
+  ggplot(aes(x = .iteration, y = .value, color = chain)) +
+    geom_line(alpha = .5) +
+    facet_wrap(~ .variable, scales = "free") +
+    scale_color_viridis_d() +
+    labs(x = "iteration", y = "cumulative mean",
+         title = "Parameter exploration converges to the mean\nacross markov chains") +
+    theme(panel.grid.major.y = element_line(color = "white"))
+
+p1 + p2 + plot_layout(guides = 'collect')
+```
+
+Sometimes markov chains can go wrong so its always important to check STAN's HMC diagnostics.
+```{r}
+check_hmc_diagnostics(fit)
+```
+
+# Analysis
+
+Now that we've run (and believe) our model, lets examine its personality. Our Bayesian method gives us a robust understanding of the data generating process. Below, we take our posterior samples and examine their values. Like I mentioned earlier, our samples are returned in proportion to their likelihood (and prior information). Remember, there is always uncertainty about parameters values (Recall, in our case the parameters are the means and standard devations of the ratings in genres). This uncertainty can come from multiple sources - such as the fact that we have a finite sample. We can therefore interpret the x-axis in the graphs below as the probability of that particular value being the true value of the parameter $Pr(\theta | D)$.
+
+Note that this is in contrast to our interpretation of the results of the t-test which claims that 95% of alternative universes with alternative movies would have comedy ratings higher than action ratings by [.14, .72] on average.
+
+```{r fig.height=4, fig.width=10, warning=FALSE}
+plot_posterior_moment <- function(vec, width = .95) {
+  m <- mean(vec)
+  hdi <- as.vector(hdi(vec, .width = width))
+  df <- enframe(vec)
+  
+  ggplot(df, aes(vec)) +
+    stat_density(geom = "line", size = 1, color = viridis(1)) +
+    geom_segment(aes(x = hdi[1], xend = hdi[2], 
+                     y = 0, yend = 0),
+                 color = viridis(1)) +
+    geom_point(aes(y=0, x = m), size = 2, shape = 1, color = viridis(1)) +
+    scale_y_continuous(NULL, NULL) + xlab("Posterior Distribution") +
+    theme(panel.grid.major.y = element_blank(),
+          panel.grid.major.x = element_line(color = "white"))
+}
+
+post <- gather_draws(fit, alpha[group], gamma[group]) %>% 
+  ungroup() %>% 
+  mutate(group = str_c("Group ", group))
+
+p1 <- post %>% 
+  filter(.variable == "alpha", group == "Group 1") %>% 
+  pull(.value) %>% 
+  plot_posterior_moment() +
+    scale_x_continuous(name = NULL, breaks = seq(4.9, 6.3, .1), limits = c(4.9, 6.3)) +
+    labs(title = expression(mu[comedy]))
+p2 <- post %>% 
+  filter(.variable == "alpha", group == "Group 2") %>% 
+  pull(.value) %>% 
+  plot_posterior_moment() +
+    scale_x_continuous(name = NULL, breaks = seq(4.9, 6.3, .1), limits = c(4.9, 6.3)) +
+    labs(title = expression(mu[action]))
+p3 <- post %>% 
+  filter(.variable == "gamma", group == "Group 1") %>% 
+  pull(.value) %>% 
+  plot_posterior_moment() +
+  scale_x_continuous(name = NULL, breaks = seq(1, 2, by = .1), limits = c(1,2)) +
+    labs(title = expression(sigma[comedy]))
+p4 <- post %>% 
+  filter(.variable == "gamma", group == "Group 2") %>% 
+  pull(.value) %>% 
+  plot_posterior_moment() +
+  scale_x_continuous(name = NULL, breaks = seq(1, 2, by = .1), limits = c(1,2)) +
+    labs(title = expression(sigma[action]))
+
+p1 + p3 + p2 + p4 +
+  plot_annotation(title = "Posterior Moments",
+                  subtitle = "Shown with 95% credibility about the mean")
+```
+
+We can do fun things with our posterior distributions. In particular, we can calculate the difference between means (also known as a contrast) between two groups and formally analyze the probability of comedy movies getting higher ratings than action movies. 
+
+```{r fig.height=2, fig.width=10, warning=FALSE}
+post_mudiff <- spread_draws(fit, mu_diff, sigma_diff)
+p1 <- plot_posterior_moment(post_mudiff$mu_diff) +
+  scale_x_continuous(expression(mu[comedy] - mu[action]), breaks = seq(-.1, 1.1, by = .1), limits = c(-.1, 1.1)) +
+  labs(title = "Posterior difference in means",
+       subtitle = "Shown with 95% credibility about the mean")
+
+p2 <- plot_posterior_moment(post_mudiff$sigma_diff) +
+  scale_x_continuous(expression(sigma[comedy] - sigma[action]), breaks = seq(-.7, 1, .1), limits = c(-.7, .1), labels = round(seq(-.7, 1, .1), 1)) +
+  labs(title = "Posterior difference in standard deviations",
+       subtitle = "Shown with 95% credibility about the mean")
+
+
+p1 + p2
+```
+
+We can use this difference to directly calculate the probability of the mean of comedy ratings being higher than the mean of action ratings to be 99.85%. We also calculate the 95 percent confidence interval of the difference to be between [.16, .75]. 
+
+```{r}
+post_mudiff %>% 
+  transmute(`Bayesian p-value` = as.integer(mu_diff > 0),
+            Difference = mu_diff) %>%
+  gather(variable, value) %>%
+  group_by(variable) %>% 
+  mean_hdi()
+```
+
+# Conclusion
+
+Its important to not be dogmatic about your tooling. In our case, the frequentist approach lined up pretty well with the bayesian approach... and was way easier to reach for! However, its equally important to remember the that these quick procedures come with a lot of assumptions - for example our t-test was run with a tacit equal variance assumption which can affect the Type I error rate when violated. Bayesian approaches, through more verbose, force you to spell out the exact model that you are using to explain your data... and there is always a model being run under the hood, even for something as simple as a t-test!
+
+
+
+
