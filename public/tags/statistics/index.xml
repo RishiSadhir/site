@@ -6,17 +6,17 @@
     <description>Recent content in Statistics on Rishi Sadhir&#39;s personal blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 01 Jan 2020 21:48:51 -0700</lastBuildDate>
+    <lastBuildDate>Tue, 31 Dec 2019 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="/tags/statistics/index.xml" rel="self" type="application/rss+xml" />
     
     
     <item>
       <title>T-Test is not BEST</title>
-      <link>/2020/01/01/t-test-is-not-best/</link>
-      <pubDate>Wed, 01 Jan 2020 21:48:51 -0700</pubDate>
+      <link>/2019/12/31/t-test-is-not-best/</link>
+      <pubDate>Tue, 31 Dec 2019 00:00:00 +0000</pubDate>
       
-      <guid>/2020/01/01/t-test-is-not-best/</guid>
+      <guid>/2019/12/31/t-test-is-not-best/</guid>
       <description>Introduction In this post, we explore the task of comparing groups of measurements. Everyone knows about the T-Test and everyone uses it. Yet, there are better methods for drawing inferences from two independent groups’ (Kruschke, 2013; Morey &amp;amp; Rouder, 2015). Let’s talk about how “Bayesian estimation supersedes the t-test” (Kruschke, 2013).
 In that article (Bayesian estimation supersedes the t-test) Kruschke (2013) provided clear and well-reasoned arguments favoring Bayesian parameter estimation over null hypothesis significance testing in the context of comparing two groups, a situation which is usually dealt with a t-test.</description>
     </item>
