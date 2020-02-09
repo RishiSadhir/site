@@ -14,54 +14,56 @@ categories:
 
 
 
-<p>This is a retelling of Richard McElreath’s <a href="https://elevanth.org/blog/2018/01/29/algebra-and-missingness/">story</a> about tea, oxen, and discrete parameters in Stan. In a Chinese village, children love tea but can only enjoy it after stabling their oxen. The problem is, children are <em>liars</em> sometimes and its up to us enforce the rules!</p>
+<p>This is a retelling of Richard McElreath’s <a href="https://elevanth.org/blog/2018/01/29/algebra-and-missingness/">story</a> about tea, oxen, and discrete parameters in Stan. In a Chinese village, children love tea but can only enjoy it after stabling their oxen. The problem is, children are <em>liars</em> sometimes and its up to us enforce the rules.</p>
 <blockquote>
 <p>You are the village enforcer of oxen customs… Each evening, you must determine which children have properly stabled their oxen. For many houses, you can see whether or not the ox is stabled. But other houses have enclosed stables, so you cannot observe the ox without appearing to accuse that child of violating the rule. To do so and then discover a properly stabled ox would be embarrassing for everyone…</p>
 </blockquote>
-<p>So, there is a cost to revealing whether or not a child has stabled their oxen. We also want to know whether tea-drinkers or non-tea-drinkers are a better bet to blame. We need a model to help us reason about all this.</p>
+<p>As enforcers, we think observing children drinking tea will give us some information on whether or not they stabled their Ox. We also don’t want to check every single child because we associate some personal cost to the embarrasment we’d feel if we were wrong. We need a model to help us reason about all this.</p>
 <div id="preliminaries" class="section level1">
 <h1>Preliminaries</h1>
 <p>This post is targeted at folks who already have an understanding of bayesian statistics. Throughout, I’ll use <a href="https://mc-stan.org/">Stan</a> as my primary modeling tool. There is a lot you can do to make your Stan code more efficient but this post shoots for interpretability. To learn more about Bayesian Statistics and Stan, I highly recommend Richard’s book <a href="https://xcelab.net/rm/statistical-rethinking/">Statistical Rethinking</a> and the wonderful documentation on the Stan website.</p>
 <pre class="r"><code># Interface with Stan
 library(rstan)
-# Tools for working with posteriors
+# Helpers for working with Stan
 library(tidybayes)
 # Stan options
 options(mc.cores = parallel::detectCores())
 rstan_options(auto_write = TRUE)</code></pre>
-<p>I use R and the tidyverse to wrangle data and dispatch analyses to Stan. You can learn more about the tidyverse through Hadley Wikham’s free online book <a href="https://r4ds.had.co.nz/">R4DS</a>. By the way, Stan is an external library that works just fine with Python too… Feel free to use whatever you’re most comfortable with.</p>
+<p>I use R and the tidyverse to wrangle data and dispatch analyses to Stan. I think it’s excellent for data wrangling and statistics. You can learn more about the tidyverse through Hadley Wikham’s free online book <a href="https://r4ds.had.co.nz/">R4DS</a>. By the way, Stan is an external library that works just fine with Python too… Feel free to use whatever you’re most comfortable with.</p>
 <pre class="r"><code># Tidyverse for wrangling and plotting
 library(tidyverse)
+# Patchwork stitches plots together
 library(patchwork)
-# Set up plot theme
+# My plot theme
 theme_minimal() %+replace%
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
-        plot.background = element_rect(color = &quot;transparent&quot;, fill = &quot;grey90&quot;)) %&gt;% 
+        plot.background = element_rect(color = &quot;transparent&quot;, fill = &quot;#F8F8F8&quot;)) %&gt;% 
   theme_set()</code></pre>
 <p>With that out of the way, lets return to the problem at hand.</p>
 </div>
 <div id="building-a-model-for-oxen-and-tea" class="section level1">
 <h1>Building a model for oxen and tea</h1>
-<p>To create our model, lets think carefully about about this Chinese village and build a mini mathematical replica of it. As the enforcer, we walk around the village and observe children drinking tea or not drinking tea. We also observe each child’s stall… but only some of them are uncovered. Should we run the risk of checking on some covered stables?</p>
-<p>Lets start by calling out some notation. We define three parameters below. Learning the values of these parameters will help us in our decision making process.</p>
+<p>To create our model, lets think carefully about about this Chinese village and how we might build a mini mathematical replica of it. As the enforcer, we walk around our village and observe children drinking tea or not drinking tea. We also observe each child’s stall… but only some of them are uncovered. Looks like we have some “ground truth” to learn from.</p>
+<p>Lets start by calling out some notation. We define three parameters below. Learning these parameters will help us in our decision making process.</p>
 <ul>
-<li>Let <span class="math inline">\(p_{drink} = Pr(Tea | Ox)\)</span>. This is the probability of a child drinking tea given they have stabled their ox. Zero is a plausible value for this probability as not every child may want to drink tea.</li>
-<li>Let <span class="math inline">\(p_{cheat} = Pr(Tea | No\_Ox)\)</span> be the probability of a child drinking tea given they have <em>not</em> stabled their ox.</li>
-<li>Let <span class="math inline">\(s_i\)</span> indicate whether or not a child has stabled their ox.</li>
+<li>Let <span class="math inline">\(p_{drink} = Pr(Tea | Ox)\)</span>. This is the probability of a child drinking tea given they have stabled their ox. Zero is a plausible value here as not every child may want to drink tea.</li>
+<li>Let <span class="math inline">\(p_{cheat} = Pr(Tea | No\_Ox)\)</span>. This is the probability of a child drinking tea given they have <em>not</em> stabled their ox.</li>
+<li>Let <span class="math inline">\(s_i\)</span> indicate whether or not child <span class="math inline">\(i\)</span> has stabled their ox.</li>
 </ul>
-<p>With these building blocks, we can build our little math world. <span class="math inline">\(s_i\)</span> and <span class="math inline">\(Tea_i\)</span> are given data for each child <span class="math inline">\(i\)</span>. Recall that some stables are covered and thus in unobserved states.
+<p>With these building blocks, lets build our little math world. Remember, <span class="math inline">\(s_i\)</span> and <span class="math inline">\(Tea_i\)</span> are given data for each child <span class="math inline">\(i\)</span>. These are things we can actually observe when we walk around the village.
 <span class="math display">\[
 \begin{align}
 &amp;Tea_i \sim Bernoulli(\pi_i) &amp; \text{[Child i drinks tea with probability } \pi_i] \\
-&amp;\pi_i = s_ip_{drink} + (1 - s_i)p_{cheat} &amp; [\pi_i \text{ is influenced by stabling ]}\\
-&amp;s_i \sim Bernoulli(\sigma) &amp; [\sigma \text{ is the proportion of children who stable]}\\
+&amp;\pi_i = s_ip_{drink} + (1 - s_i)p_{cheat} &amp; [\pi_i \text{ is influenced by stable status ]}\\
+&amp;s_i \sim Bernoulli(\sigma) &amp; \text{[Average over unobservable stables with } \sigma]\\
 &amp;p_{drink} \sim Beta(2, 2) &amp; \text{[Mildly regularizing priors]}\\
 &amp;p_{cheat} \sim Beta(2, 2) \\
 &amp;\sigma \sim Beta(2, 2)
 \end{align}
 \]</span></p>
-<p>Complexity arises from the fact that we don’t observe all stables, <span class="math inline">\(s_i\)</span>. We deal with this in line 3. We lets the “stabling proportion” be a parameter in our model and let Stan average over our ignorance. This means <span class="math inline">\(\sigma\)</span> will just represent the proportion of children who stable. Its good practice to <em>not</em> throw out the observations where we can’t see inside the stable. This method of Bayesian imputation fills lets us propagate our uncertainty forward to our parameter estimates. Finally, We chose mildly regularizing priors in the last 3 lines for the probability of cheating, drinking, and proportion of children who stable.</p>
+<p>Complexity arises from the fact that we don’t observe all stables, <span class="math inline">\(s_i\)</span>. We deal with this in line 3. We let the “stabling proportion” be a parameter in our model and let Stan average over our ignorance. This means <span class="math inline">\(\sigma\)</span> will just represent the average proportion of children who stable. We may think that it would have been better to just throw out those observations and move on… but there is information captured by the other variables that help stan understand, among other things, the average tea drinking rate regardless of stable status. In general, its good practice <em>not</em> to throw out the observations. Bayesian data analysis shows us how and lets us propagate our uncertainty forward to our parameter estimates.</p>
+<p>Finally, We chose mildly regularizing priors in the last 3 lines for the probability of cheating, drinking, and proportion of children who stable.</p>
 <pre class="r"><code>tdf &lt;- tibble(x = rbeta(1e4, 2, 2)) 
 interval &lt;- HDInterval::hdi(tdf$x)
 
@@ -75,8 +77,7 @@ tdf %&gt;%
                shape = 1, size = 3, color = &quot;steelblue&quot;) +
     scale_y_continuous(NULL, NULL) +
     scale_x_continuous(breaks = seq(from = 0, to = 1, by = .1)) +
-    theme(#axis.line.x.bottom = element_line(),
-          panel.grid.major.x = element_line(color = &quot;white&quot;, size = 1)) +
+    theme(panel.grid.major.x = element_line(color = &quot;white&quot;, size = 1)) +
     labs(x = &quot;Probability&quot;,
          title = &quot;Mildly regularizing prior&quot;,
          subtitle = &quot;Shown with 95% credibility about the mean&quot;,
@@ -86,52 +87,53 @@ tdf %&gt;%
 <p><span class="math display">\[
 \begin{align}
 Pr(Tea) &amp;= Pr(Tea|Ox)Pr(Ox) + Pr(Tea | No\_Ox)Pr(No\_Ox) \\
-&amp;= \sigma p_{drink} + (1 - \sigma)p_{cheat}
+&amp;= p_{drink} \sigma  + p_{cheat}(1 - \sigma)
 \end{align}
 \]</span></p>
-<p>Leveraging Bayes formula, we can use this to figure out the probability a child is lying. This tells us the probability of a tea drinking child having not stabled their ox. As enforcers, this will be important to our decision making process.</p>
+<p>Leveraging Bayes formula, we can use this to figure out the probability a child is lying. When we walk around our village and notice a child drinking tea, this will give us a more informed decision as to whether or not they stabled their ox.</p>
 <p><span class="math display">\[
 \begin{align}
 Pr(No\_ox | tea) &amp;= \frac{Pr(Tea | No\_Ox)Pr(No\_Ox)}{Pr(Tea)} \\
 &amp;= \frac{(1 - \sigma) p_{cheat}}{\sigma p_{drink} + (1 - \sigma) p_{cheat}}
 \end{align}
 \]</span></p>
-<p>And finally, we can calculate the probability of a child not stabling given they are not drinking tea.
+<p>And finally, we can calculate the probability of a child not stabling given they are not drinking tea. Again, very important to our decision making process.
 <span class="math display">\[
 \begin{align}
 Pr(No\_ox | No\_tea) &amp;= \frac{Pr(No\_Tea | No\_Ox)Pr(No\_Ox)}{Pr(No\_tea)} \\
 &amp;= \frac{(1 - \sigma) (1-p_{cheat})}{\sigma (1-p_{drink}) + (1 - \sigma) (1-p_{cheat})}
 \end{align}
 \]</span></p>
-<p>The last two probability statements will be essential to our jobs. They quantify the likelihood of a child not stabling their ox when we observe tea drinking and when we don’t observe tea drinking. If we have an understanding of the “cost” of our own embarrasment, we can bake these in to a utility function that would help us understand whether or not we should pull that childs card.</p>
-<p>Okay, now that we’ve figured out the math, lets take it to the data!</p>
+<p>The last two probability statements quantify the likelihood of a child not stabling their ox based on their tea drinking behavior. If we have an understanding of the “cost” of our own embarrasment, we can bake these in to a utility function that would help us understand whether or not we should check that child’s stable.</p>
+<p>Okay, now that we’ve figured out the math, lets take it to the data,</p>
 </div>
-<div id="application" class="section level1">
-<h1>Application</h1>
+<div id="simulating-lying-children" class="section level1">
+<h1>Simulating lying children</h1>
 <p>In this section, we’ll simulate data with made up parameters then use Stan to recover them. This is something you should get use to as a Baysian practitioner. It represents the bigger picture of Bayesian data analysis. We specify the data generating process by simulating the data we are expecting to see. We then encode that simulation code in Stan but leave our unknowns as parameters. Finally, we feed Stan real data and let it search around for the paramers that best describe it.</p>
-<div id="simulation" class="section level3">
-<h3>Simulation</h3>
-<p>First we’ll simulate the data. Note how our model, <span class="math inline">\(pi_i = s_ip_{drink} + (1 - s_i)p_{cheat}\)</span>, is represented directy in this code block.</p>
+<p>In the code below, note how our model, <span class="math inline">\(pi_i = s_ip_{drink} + (1 - s_i)p_{cheat}\)</span>, is represented directy in this code block.</p>
 <pre class="r"><code># The seed makes our analysis repeatable
 set.seed(1)
 # There are 100 children in the village
 N_children &lt;- 100
-# 44 stables wre unobservable
+# 22 stables were covered
 idx_covered_stables &lt;- sample(1:N_children, size = 22)
-# These parameters are unknown in the real data
-## 75 Percent of children stable their ox
+
+# The following parameters would be
+# unknown in real data
+
+# 75 Percent of children stable their ox
 p_stabled &lt;- .75
-## After stabling ox, 100% of children drink tea
+# After stabling ox, 100% of children drink tea
 p_drink &lt;- 1
-## Unstabling children cheat 50% of the time
+# Children who didn&#39;t stable cheat by drinking tea 50% of the time
 p_cheat &lt;- .5
 
-# Simulate!
-set.seed(1)
+# Simulate a data set with our known parameters!
 stabled &lt;- rbinom(N_children, size=1, prob=p_stabled)
 stabled_obs &lt;- stabled
 stabled_obs[idx_covered_stables] &lt;- -1
-tea &lt;- rbinom(N_children, size=1, prob=stabled*p_drink + (1-stabled)*p_cheat)
+tea &lt;- rbinom(N_children, size=1, 
+              prob=stabled*p_drink + (1-stabled)*p_cheat)
 
 df &lt;- tibble(stabled, stabled_obs, tea)
 head(df)</code></pre>
@@ -139,15 +141,14 @@ head(df)</code></pre>
 ##   stabled stabled_obs   tea
 ##     &lt;int&gt;       &lt;dbl&gt; &lt;int&gt;
 ## 1       1          -1     1
-## 2       1           1     1
+## 2       0           0     1
 ## 3       1           1     1
-## 4       0           0     1
+## 4       1           1     1
 ## 5       1           1     1
-## 6       0           0     0</code></pre>
-</div>
-<div id="stan" class="section level3">
-<h3>Stan</h3>
-<p>Now we encode our model in stan. The likelihood portion of our stan model is really the same as the simulation code above. <code>log_mix</code> might be a bit confusing, but its just doing the same thing as the mixture in our simulation above <span class="math inline">\(pi_i = s_ip_{drink} + (1 - s_i)p_{cheat}\)</span>.</p>
+## 6       0           0     1</code></pre>
+<p>The data set above represents us “playing our model forward.” We picked paramers and ran it through our model to see what kind of data it would generate. Now, we “play our model backwards” by encoding it in stan and conditioning our newly uknown parameters, <span class="math inline">\(p_{drink}\)</span>, <span class="math inline">\(p_{cheat}\)</span>, and <span class="math inline">\(s_i\)</span>, on our simulated data.</p>
+<p>If you haven’t seen Stan code before, here is a quick overview. The first section labled <code>data</code> just describes the kind of data we’ll pass in. The second section labled <code>parameters</code> tells stan which parameters it needs to solve for. There you’ll see our usual suspects. The third section labled <code>model</code> describes our prior and likelihood. We won’t get in to priors in this post, but this section tells Stan how to evaluate how good a set of candidate parameters are by calculating how well it describes the data.</p>
+<p>If you look closely, the likelihood portion of our stan model is really the same as the simulation code above. <code>log_mix</code> might be a bit confusing, but its just doing the same thing as the mixture in our simulation above <span class="math inline">\(pi_i = s_ip_{drink} + (1 - s_i)p_{cheat}\)</span>.</p>
 <pre class="stan"><code>data {
   // Number of children in city
   int n;
@@ -167,41 +168,41 @@ model{
   p_drink ~ beta(2,2);
   sigma   ~ beta(2,2);
 
-  // probability of tea
+  // likelihood
   for (i in 1:n) {
     if (stabled_obs[i] == -1) {
-      // ox unobserved
+      // stable unobserved
       target += log_mix( 
                   sigma , 
                   bernoulli_lpmf(tea[i] | p_drink) , 
                   bernoulli_lpmf(tea[i] | p_cheat));
     } else {
-      // ox observed
+      // stable observed
       tea[i] ~ bernoulli(stabled_obs[i]*p_drink + (1-stabled_obs[i])*p_cheat);
       stabled_obs[i] ~ bernoulli(sigma);
     }
   }
 }</code></pre>
-<p>Now, lets take our model and condition it on our simulated data to see if we recovered our parameters. Our 95% credible intervals contain the recovered parameter values.</p>
+<p>Now, lets take our model and condition it on our simulated data to see if we recovered our parameters. Indeed, we have recovered them. Our 95% credible intervals contain the original parameters from our simulation.</p>
 <pre class="r"><code>stan_fit &lt;- sampling(stan_model, compose_data(df),
          chains = 4, cores = 4, refresh = 0,
          control = list(adapt_delta = .99))
 print(stan_fit, probs = c(.05, .95))</code></pre>
-<pre><code>## Inference for Stan model: 22811e608fb0a2aa37c70866058b8526.
+<pre><code>## Inference for Stan model: 26162cb55bda46140f2a8d12ece76df7.
 ## 4 chains, each with iter=2000; warmup=1000; thin=1; 
 ## post-warmup draws per chain=1000, total post-warmup draws=4000.
 ## 
 ##           mean se_mean   sd     5%    95% n_eff Rhat
-## p_cheat   0.45    0.00 0.09   0.29   0.61  2241    1
-## p_drink   0.97    0.00 0.02   0.92   0.99  3200    1
-## sigma     0.73    0.00 0.05   0.65   0.80  2388    1
-## lp__    -83.71    0.04 1.26 -86.18 -82.36  1160    1
+## p_cheat   0.60    0.00 0.09   0.44   0.74  2688    1
+## p_drink   0.97    0.00 0.02   0.93   0.99  3136    1
+## sigma     0.74    0.00 0.05   0.66   0.81  2024    1
+## lp__    -79.89    0.03 1.22 -82.32 -78.54  1409    1
 ## 
-## Samples were drawn using NUTS(diag_e) at Sat Feb  8 20:39:17 2020.
+## Samples were drawn using NUTS(diag_e) at Sun Feb  9 16:03:45 2020.
 ## For each parameter, n_eff is a crude measure of effective sample size,
 ## and Rhat is the potential scale reduction factor on split chains (at 
 ## convergence, Rhat=1).</code></pre>
-<p>An awesome benefit of Bayesian data analysis is that we get to work with a posterior afterwards. In the next section, we’ll take advantage of this by using this rich understanding of our parameters in to our decision making process.</p>
+<p>An awesome benefit of Bayesian data analysis is that we get to work with a posterior afterwards. In the next section, we’ll take advantage of this by using this rich understanding of our parameters in our decision making process.</p>
 <pre class="r"><code>df_posterior &lt;- gather_draws(stan_fit, p_cheat, p_drink, sigma)
 
 p1 &lt;- df_posterior %&gt;% 
@@ -210,56 +211,72 @@ p1 &lt;- df_posterior %&gt;%
     scale_y_continuous(NULL, NULL) +
     scale_x_continuous(breaks = seq(from = 0, to = 1, by = .1)) +
     facet_wrap(~ .variable, ncol = 1, scales = &quot;free_y&quot;) +
+    theme(axis.line.x.bottom = element_line(),
+        panel.grid.major.x = element_line(color = &quot;white&quot;, size = 1)) +
     labs(x = &quot;Posterior Value&quot;,
-         title = &quot;Parameter fit&quot;)
+         title = &quot;Parameter Fit&quot;)
 
 p2 &lt;- df_posterior %&gt;% 
   mutate(chain = as.factor(.chain)) %&gt;% 
   ggplot(aes(y = .value, x = .iteration, color = chain)) +
-    geom_line(alpha = .7) +
+    geom_line(alpha = .5) +
     facet_wrap(~ .variable, ncol = 1, scales = &quot;free_y&quot;) +
     scale_color_viridis_d() +
-    theme(axis.ticks.y = element_line()) +
+    theme(axis.line.x.bottom = element_line(),
+          axis.ticks.y = element_line(),
+          panel.grid.major.y = element_line(color = &quot;white&quot;, size = 1)) +
     labs(y = &quot;&quot;, x = &quot;Iteration&quot;,
          title = &quot;Parameter Exploration&quot;)
 
-p1 + p2</code></pre>
-<p><img src="/post/Bayesian_tea_and_oxen_files/figure-html/unnamed-chunk-7-1.png" width="768" angle=90 style="display: block; margin: auto;" /></p>
+p1 + p2 + patchwork::plot_annotation(caption=&quot;Posterior distrubtion and exploration about free parameters\n4 parallel chains from Stan&#39;s NUTS-HMC sampler&quot;)</code></pre>
+<p><img src="/post/Bayesian_tea_and_oxen_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
 </div>
-<div id="emperics" class="section level3">
-<h3>Emperics</h3>
+<div id="to-shame-or-not-to-shame" class="section level1">
+<h1>To shame or not to shame</h1>
+<p>In real life, we are almost never totally certain about the true value of parameters like these. Our uncertainty is represented in the “spread” of the posterior distributions above. The cool thing about Bayesian data analysis is that we get to propagate this uncertainty forward in to our decision making process. So, based on what we know, what does tea drinking tell us about stabling oxen?</p>
 <pre class="r"><code>df_posterior &lt;- spread_draws(stan_fit, p_cheat, p_drink, sigma)
 
 df_posterior &lt;- df_posterior %&gt;% 
   mutate(&quot;Pr(No_Ox|tea)&quot; = 
            ((1 - sigma)*p_cheat) /
            (sigma*p_drink + (1-sigma)*p_cheat))
+hdi_nt &lt;- HDInterval::hdi(df_posterior$`Pr(No_Ox|tea)`)
+
 p1 &lt;- df_posterior %&gt;% 
   ggplot(aes(`Pr(No_Ox|tea)`)) +
   stat_density(geom = &quot;line&quot;, color = &quot;steelblue&quot;) +
+  geom_segment(aes(y=0,yend=0, x = hdi_nt[[1]], xend = hdi_nt[[2]]),
+               color = &quot;steelblue&quot;) +
+  geom_point(aes(y=0, x = mean(df_posterior$`Pr(No_Ox|tea)`)),
+             shape = 1, size = 2, color = &quot;steelblue&quot;) +
   scale_x_continuous(breaks = seq(from = 0, to = 1, by = .1),
                      limits = c(0, 1)) +
   scale_y_continuous(NULL, NULL) +
-  theme(axis.line.x.bottom = element_line()) +
-  ggtitle(&quot;Posterior probabilities of bad animal husbandry&quot;)
+  theme(axis.line.x.bottom = element_line(),
+        panel.grid.major.x = element_line(color = &quot;white&quot;, size = 1)) +
+  ggtitle(&quot;Posterior probabilities of bad animal husbandry&quot;,
+          &quot;Shown with 95% credibility about the mean&quot;)
 
 df_posterior &lt;- df_posterior %&gt;% 
   mutate(&quot;Pr(No_Ox|no_tea)&quot; = 
            ((1 - sigma)*(1-p_cheat)) /
            (sigma*(1-p_drink) + (1-sigma)*(1-p_cheat)))
+hdi_nn &lt;- HDInterval::hdi(df_posterior$`Pr(No_Ox|no_tea)`)
+
 p2 &lt;- df_posterior %&gt;% 
   ggplot(aes(`Pr(No_Ox|no_tea)`)) +
   stat_density(geom = &quot;line&quot;, color = &quot;steelblue&quot;) +
+  geom_segment(aes(y=0,yend=0, x = hdi_nn[[1]], xend = hdi_nn[[2]]),
+               color = &quot;steelblue&quot;) +
+  geom_point(aes(y=0, x = mean(df_posterior$`Pr(No_Ox|no_tea)`)),
+             shape = 1, size = 2, color = &quot;steelblue&quot;) +
   scale_x_continuous(breaks = seq(from = 0, to = 1, by = .1),
                      limits = c(0, 1)) +
   scale_y_continuous(NULL, NULL) +
-  theme(axis.line.x.bottom = element_line())
+  theme(axis.line.x.bottom = element_line(),
+        panel.grid.major.x = element_line(color = &quot;white&quot;, size = 1)) 
 
 p1 / p2</code></pre>
-<p><img src="/post/Bayesian_tea_and_oxen_files/figure-html/unnamed-chunk-8-1.png" width="672" angle=90 style="display: block; margin: auto;" /></p>
-</div>
-</div>
-<div id="conclusion" class="section level1">
-<h1>Conclusion</h1>
+<p><img src="/post/Bayesian_tea_and_oxen_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
 <p>Alright, we’ve gone through a journey from a small Chinese village all the way to mixture models. So should we check in on the children’s stables when they aren’t drinking tea? Our next step would be to definie a utility function that describes how much we value embarrassment vs. catching rule breakers. We can ultimately match those up with our posterior distributions and utilize Bayesian decision theory to do whats best. This is a topic we’ll work on in another post.</p>
 </div>

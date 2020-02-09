@@ -1,0 +1,3 @@
+Repository for Rishi Sadhir's personal blog - http://www.rishisadhir.com
+
+The purpose of this website is to hold *static* content on topics that interest Rishi. For that reason, we leverage [[https://gohugo.io/][Hugo]], [[https://bookdown.org/yihui/blogdown/][Blogdown]], and a little custom CSS to build our website and host it through [[https://app.netlify.com/teams/rishisadhir/sites][Netlify]]'s git auto-deploy. Most actual content will likely be generated with python for ML topics, R for statistics topics, and markdown for all other writing.

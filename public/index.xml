@@ -17,7 +17,7 @@
       <pubDate>Sat, 01 Feb 2020 00:00:00 +0000</pubDate>
       
       <guid>/2020/02/01/tea-oxen-and-discrete-parameters/</guid>
-      <description>This is a retelling of Richard McElreath’s story about tea, oxen, and discrete parameters in Stan. In a Chinese village, children love tea but can only enjoy it after stabling their oxen. The problem is, children are liars sometimes and its up to us enforce the rules!
+      <description>This is a retelling of Richard McElreath’s story about tea, oxen, and discrete parameters in Stan. In a Chinese village, children love tea but can only enjoy it after stabling their oxen. The problem is, children are liars sometimes and its up to us enforce the rules.
  You are the village enforcer of oxen customs… Each evening, you must determine which children have properly stabled their oxen. For many houses, you can see whether or not the ox is stabled.</description>
     </item>
     
@@ -36,8 +36,8 @@
       <pubDate>Tue, 31 Dec 2019 00:00:00 +0000</pubDate>
       
       <guid>/2019/12/31/t-test-is-not-best/</guid>
-      <description>Introduction In this post, we explore the task of comparing groups of measurements. Everyone knows about the T-Test and everyone uses it. Yet, there are better methods for drawing inferences from two independent groups’ (Kruschke, 2013; Morey &amp;amp; Rouder, 2015). Let’s talk about how “Bayesian estimation supersedes the t-test” (Kruschke, 2013).
-In that article (Bayesian estimation supersedes the t-test) Kruschke (2013) provided clear and well-reasoned arguments favoring Bayesian parameter estimation over null hypothesis significance testing in the context of comparing two groups, a situation which is usually dealt with a t-test.</description>
+      <description>In this post, we explore the task of comparing groups of measurements. We’ve all heard about the T-Test, but Bayesian statistics offers an interesting alternative. Let’s talk about how “Bayesian estimation supersedes the t-test” (Kruschke, 2013).
+Preliminaries In this post, we’ll encode Kruschke’s methods in STAN and use it to compare action move ratings versus comedy movie ratings. The code shown below is also available in python here along with the supporting CSV.</description>
     </item>
     
   </channel>

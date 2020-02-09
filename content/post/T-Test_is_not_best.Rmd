@@ -6,19 +6,15 @@ categories: ["R", "Bayesian", "Statistics"]
 tags: ["R", "Bayesian", "Statistics"]
 ---
 
-# Introduction
+In this post, we explore the task of comparing groups of measurements. We've all heard about the T-Test, but Bayesian statistics offers an interesting alternative. Let’s talk about how “Bayesian estimation supersedes the t-test” ([Kruschke, 2013](https://cran.r-project.org/web/packages/BEST/vignettes/BEST.pdf)).
 
-In this post, we explore the task of comparing groups of measurements. Everyone knows about the T-Test and everyone uses it. Yet, there are better methods for drawing inferences from two independent groups’ (Kruschke, 2013; Morey & Rouder, 2015). Let’s talk about how “Bayesian estimation supersedes the t-test” (Kruschke, 2013).
 
-In that article (Bayesian estimation supersedes the t-test) Kruschke (2013) provided clear and well-reasoned arguments favoring Bayesian parameter estimation over null hypothesis significance testing in the context of comparing two groups, a situation which is usually dealt with a t-test. It also introduced a robust model for comparing two groups, which modeled the data as t-distributed, instead of a Gaussian distribution.
-
-Kruschke (2013, p.573) writes:
-> “When data are interpreted in terms of meaningful parameters in a mathematical description, such as the difference of mean parameters in two groups, it is Bayesian analysis that provides complete information about the credible parameter values. Bayesian analysis is also more intuitive than traditional methods of null hypothesis significance testing (e.g., Dienes, 2011).”
+# Preliminaries
 
 In this post, we'll encode Kruschke's methods in STAN and use it to compare action move ratings versus comedy movie ratings. The code shown below is also available in python [here](https://github.com/RishiSadhir/T-Test-is-not-BEST/blob/master/T-Test%20is%20not%20best.ipynb) along with the supporting CSV. We make liberal use of the tidyverse grouping of R packages to carry out our analysis. Those unfamiliar can reference the excellent [R4DS](https://r4ds.had.co.nz/) book by Hadley Wickham.
 
 
-```{r setup}
+```{r message=FALSE, warning=FALSE}
 library(tidyverse)
 library(patchwork) # Stitch together ggplots
 library(viridis) # Be colorblind friendly 
@@ -34,6 +30,8 @@ theme_minimal() %+replace%
         plot.background = element_rect(color = "transparent", fill = "grey90")) %>% 
   theme_set()
 ```
+
+# Comedy or Action?
 
 Lets load our data set from the `ggplot2movies` package. This dataset contains 28819 movies from IMDB. We'll use it to compare the rating of action movies vs. comedy movies.
 ```{r}
@@ -74,9 +72,13 @@ t.test(filter(movies_clean, genre == "Comedy")$rating,
   print
 ```
 
-# Modeling
+# BEST
 
-Now lets go bayesian. In the bayesian mindset, you want to model the actual data generating process. We describe that mathematically below. A key thing to notice - We are free to look further than just the first moment of our observed distrbutions. STAN lets us flexibly model the mean, standard deviation, and degrees of freedom separately.
+[Kruschke 2013](https://cran.r-project.org/web/packages/BEST/vignettes/BEST.pdf) provides well-reasoned arguments for favoring Bayesian parameter estimation over null hypothesis significance testing to compare two groups. It also introduced a robust model for comparing two groups, which modeled the data as t-distributed, instead of a Gaussian distribution.
+
+> “When data are interpreted in terms of meaningful parameters in a mathematical description, such as the difference of mean parameters in two groups, it is Bayesian analysis that provides complete information about the credible parameter values. Bayesian analysis is also more intuitive than traditional methods of null hypothesis significance testing...”
+
+So what does this alternative look like? We describe it in the model below. Wait a second... Why run a model when you can just run a T-test? At the end of the day, a T-test is itself a model with assumptions of its own. What we are doing here isn't all that complicated, we're just obviating all the assumptions in our method. A key thing to notice - We are free to look further than just the first moment of our observed distrbutions. STAN lets us flexibly model the mean, standard deviation, and degrees of freedom separately.
 
 $$
 \begin{align}
@@ -89,7 +91,9 @@ rating &\sim student\_t(\nu, \mu_i, \sigma_i) \\
 \end{align}
 $$
 
-We encode this math in STAN below. If you aren't use to seeing stan code, I'll provide a very high level overview of what you're looking at. The first `data` block describes the what we are going to pass in from R. Note that we include both scalars and vectors here. `transformed data` does some light preprocessing to create sane priors. Priors are a bayesian concept that lets you encode prior information you have in to your model. In this case, we ask it to be a bit skeptical of group differences by assuming the ensemble mean and standard deviation. The `parameters` section outline what STAN is search over - we have an intercept for each groups mean and an intercept for each groups standard deviation. The `model` section is where we encode the models log-likelihood. It tells STAN how good a candidate set of parameter values is at describing the data.
+All we are saying here is that ratings are normally distribted and their location and spread depend on whether or not the movie is a comedy or an action flick. The last three lines are priors. Priors are a bayesian concept that lets you encode prior information you have in to your model. In this case, we ask our model to be a bit skeptical of group differences by assuming the overall mean and standard deviation to be true for all sub groups. This is effectively a very weak form of regularization... but more on that in another post.
+
+We encode this math in STAN below. If you aren't use to seeing stan code, I'll provide a very high level overview of what you're looking at. The first `data` block describes the what we are going to pass in from R. Note that we include both scalars and vectors here. `transformed data` does some light preprocessing to create sane priors.  The `parameters` section outline what STAN is search over - we have an intercept for each groups mean and an intercept for each groups standard deviation. The `model` section is where we encode the models log-likelihood. It tells STAN how good a candidate set of parameter values is at describing the data.
 
 ```{stan output.var = "stan_best"}
 data {
@@ -143,7 +147,8 @@ dlist <- list(
 
 fit <- sampling(stan_best, data = dlist, 
                 chains = 4, cores = 4, refresh = 0)
-fit
+print(fit, probs = c(.05, .95))
+
 ```
 
 MCMC sampling is really cool. It basically "randomly" explores the parameter space in proportion to the how likely sets of parameters are. This exploration is graphed below for the intercepts in our model.
@@ -178,16 +183,10 @@ p2 <- post %>%
 p1 + p2 + plot_layout(guides = 'collect')
 ```
 
-Sometimes markov chains can go wrong so its always important to check STAN's HMC diagnostics.
-```{r}
-check_hmc_diagnostics(fit)
-```
-
 # Analysis
 
-Now that we've run (and believe) our model, lets examine its personality. Our Bayesian method gives us a robust understanding of the data generating process. Below, we take our posterior samples and examine their values. Like I mentioned earlier, our samples are returned in proportion to their likelihood (and prior information). Remember, there is always uncertainty about parameters values (Recall, in our case the parameters are the means and standard devations of the ratings in genres). This uncertainty can come from multiple sources - such as the fact that we have a finite sample. We can therefore interpret the x-axis in the graphs below as the probability of that particular value being the true value of the parameter $Pr(\theta | D)$.
+Now that we ran (and believe) our model, lets examine its personality. Our Bayesian method gives us a robust understanding of the data generating process. Below, we take our posterior samples and examine their values. Like I mentioned earlier, our samples are returned in proportion to their likelihood (and prior information). We interpret the x-axis in the graphs below as the probability of that particular value being the true value of the parameter given what we've seen in our data and our priors: $Pr(\theta | Data, Priors)$.
 
-Note that this is in contrast to our interpretation of the results of the t-test which claims that 95% of alternative universes with alternative movies would have comedy ratings higher than action ratings by [.14, .72] on average.
 
 ```{r fig.height=4, fig.width=10, warning=FALSE}
 plot_posterior_moment <- function(vec, width = .95) {
@@ -240,6 +239,7 @@ p1 + p3 + p2 + p4 +
                   subtitle = "Shown with 95% credibility about the mean")
 ```
 
+
 We can do fun things with our posterior distributions. In particular, we can calculate the difference between means (also known as a contrast) between two groups and formally analyze the probability of comedy movies getting higher ratings than action movies. 
 
 ```{r fig.height=2, fig.width=10, warning=FALSE}
@@ -261,17 +261,20 @@ p1 + p2
 We can use this difference to directly calculate the probability of the mean of comedy ratings being higher than the mean of action ratings to be 99.85%. We also calculate the 95 percent confidence interval of the difference to be between [.16, .75]. 
 
 ```{r}
-post_mudiff %>% 
-  transmute(`Bayesian p-value` = as.integer(mu_diff > 0),
-            Difference = mu_diff) %>%
-  gather(variable, value) %>%
-  group_by(variable) %>% 
-  mean_hdi()
+get_mode <- function(v) {
+   uniq <- unique(v)
+   uniq[which.max(tabulate(match(v, uniq)))]
+}
+
+p_val <- with(post_mudiff, mean(mu_diff > 0))
+diff_mode  <- with(post_mudiff, get_mode(mu_diff))
+hdi <- HDInterval::hdi(post_mudiff$mu_diff)
 ```
+We are `r p_val*100`% sure comedy movies rate higher than action movies. We are 95% sure that difference is between `r round(hdi[[1]], 2)` and `r round(hdi[[2]], 2)`. Finally, the most likely value for the difference is `r round(diff_mode,2)`. Note that this is in contrast to our interpretation of the results of the t-test which claims that 95% of alternative universes with alternative movies would have comedy ratings higher than action ratings by [.14, .72] on average.
 
 # Conclusion
 
-Its important to not be dogmatic about your tooling. In our case, the frequentist approach lined up pretty well with the bayesian approach... and was way easier to reach for! However, its equally important to remember the that these quick procedures come with a lot of assumptions - for example our t-test was run with a tacit equal variance assumption which can affect the Type I error rate when violated. Bayesian approaches, through more verbose, force you to spell out the exact model that you are using to explain your data... and there is always a model being run under the hood, even for something as simple as a t-test!
+Its important to not be dogmatic about your tooling. In our case, the frequentist approach lined up pretty well with the bayesian approach... and was way easier to reach for! However, its equally important to remember the that these quick procedures come with a lot of assumptions - for example our t-test was run with a tacit equal variance assumption which can affect the Type I error rate when violated. Bayesian approaches, though more verbose, force you to spell out the exact model you are using to explain your data... and there is always a model under the hood, even for something as simple as a t-test.
 
 
 
