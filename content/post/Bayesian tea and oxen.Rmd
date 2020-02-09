@@ -1,7 +1,7 @@
 ---
 title: "Tea, Oxen, and Discrete Parameters"
-output: html_notebook
-date: '2020-02-07'
+author: "Rishi Sadhir"
+date: '2020-02-01'
 categories: ["R", "Bayesian", "Statistics"]
 tags: ["R", "Bayesian", "Statistics"]
 ---
