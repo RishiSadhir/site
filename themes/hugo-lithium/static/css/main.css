@@ -58,6 +58,13 @@ code {
   transform: scale(1.1);
 }
 
+img {
+    display: block;
+    margin: 0 0 1rem;
+    border-radius: 5px;
+    max-width: 100%;
+}
+
 .nav-logo img {
   display: block;
   max-height: 40px;
