@@ -91,10 +91,10 @@ code {
 }
 
 .content {
-  max-width: 700px;
+  max-width: 1000px;
   margin: 40px auto 10px;
-  padding: 0 15px;
-  font-size: 16px;
+  padding: 0 12px;
+  font-size: 14px;
   line-height: 1.7;
   color: #333;
 }
@@ -268,8 +268,8 @@ code {
   }
 
   .content {
-    font-size: 19px;
-    line-height: 1.8;
+    font-size: 15px;
+    line-height: 1.7;
   }
 
   .highlight {

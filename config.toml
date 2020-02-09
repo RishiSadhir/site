@@ -38,5 +38,4 @@ ignoreFiles = ["\\.Rmd$", "\\.Rmarkdown$", "_files$", "_cache$"]
     url = "logo.png"
     width = 50
     height = 50
-    alt = "Logo"
-
+    alt = "Rishi Sadhir"
