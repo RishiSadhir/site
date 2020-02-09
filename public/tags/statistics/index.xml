@@ -6,10 +6,20 @@
     <description>Recent content in Statistics on Rishi Sadhir&#39;s personal blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Tue, 31 Dec 2019 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 01 Feb 2020 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="/tags/statistics/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Tea, Oxen, and Discrete Parameters</title>
+      <link>/2020/02/01/tea-oxen-and-discrete-parameters/</link>
+      <pubDate>Sat, 01 Feb 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/2020/02/01/tea-oxen-and-discrete-parameters/</guid>
+      <description>This is a retelling of Richard McElreath’s story about tea, oxen, and discrete parameters in Stan. In a Chinese village, children love tea but can only enjoy it after stabling their oxen. The problem is, children are liars sometimes and its up to us enforce the rules!
+ You are the village enforcer of oxen customs… Each evening, you must determine which children have properly stabled their oxen. For many houses, you can see whether or not the ox is stabled.</description>
+    </item>
     
     <item>
       <title>T-Test is not BEST</title>
