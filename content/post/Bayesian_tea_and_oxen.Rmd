@@ -1,9 +1,15 @@
 ---
 title: "Tea, Oxen, and Discrete Parameters"
 author: "Rishi Sadhir"
-date: '2020-02-01'
-categories: ["R", "Bayesian", "Statistics"]
-tags: ["R", "Bayesian", "Statistics"]
+date: "2020-02-01"
+tags:
+- R
+- Bayesian
+- Statistics
+categories:
+- R
+- Bayesian
+- Statistics
 ---
 
 This is a retelling of Richard McElreath's [story](https://elevanth.org/blog/2018/01/29/algebra-and-missingness/) about tea, oxen, and discrete parameters in Stan. In a Chinese village, children love tea but can only enjoy it after stabling their oxen. The problem is, children are _liars_ sometimes and its up to us enforce the rules!
