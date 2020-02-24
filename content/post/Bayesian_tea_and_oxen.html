@@ -63,7 +63,7 @@ theme_minimal() %+replace%
 \end{align}
 \]</span></p>
 <p>Complexity arises from the fact that we don’t observe all stables, <span class="math inline">\(s_i\)</span>. We deal with this in line 3. We let the “stabling proportion” be a parameter in our model and let Stan average over our ignorance. This means <span class="math inline">\(\sigma\)</span> will just represent the average proportion of children who stable. We may think that it would have been better to just throw out those observations and move on… but there is information captured by the other variables that help stan understand, among other things, the average tea drinking rate regardless of stable status. In general, its good practice <em>not</em> to throw out the observations. Bayesian data analysis shows us how and lets us propagate our uncertainty forward to our parameter estimates.</p>
-<p>Finally, We chose mildly regularizing priors in the last 3 lines for the probability of cheating, drinking, and proportion of children who stable.</p>
+<p>Finally, We chose mildly regularizing priors in the last 3 lines for the probability of cheating, drinking, and proportion of children who stable. The code below simulates and plots that prior.</p>
 <pre class="r"><code>tdf &lt;- tibble(x = rbeta(1e4, 2, 2)) 
 interval &lt;- HDInterval::hdi(tdf$x)
 
@@ -82,7 +82,7 @@ tdf %&gt;%
          title = &quot;Mildly regularizing prior&quot;,
          subtitle = &quot;Shown with 95% credibility about the mean&quot;,
          caption = &quot;Beta(2, 2)\nUsed for Pr(cheat), Pr(drink), and Pr(stable)\n&quot;)</code></pre>
-<p><img src="/post/Bayesian_tea_and_oxen_files/figure-html/unnamed-chunk-3-1.png" width="576" angle=90 style="display: block; margin: auto;" /></p>
+<p><img src="/post/Bayesian_tea_and_oxen_files/figure-html/unnamed-chunk-3-1.png" width="960" /></p>
 <p>So how will we use this model once we’ve found it’s parameters? We’ll calculate new parameters that measure exactly what we need to help with our enforcing decisions. First of all, we can calculate the probability of drinking tea for any child. Below, we use the law of <a href="https://brilliant.org/wiki/law-of-iterated-expectation/">iterated expectations</a> to break out the probability into known chunks. Thats just a fancy way to say you can calculate the probability of an event by looking at every “sub” event contained within it. When we see children drinking tea, they’ve either stabled their ox or they have not.</p>
 <p><span class="math display">\[
 \begin{align}
@@ -110,7 +110,7 @@ Pr(No\_ox | No\_tea) &amp;= \frac{Pr(No\_Tea | No\_Ox)Pr(No\_Ox)}{Pr(No\_tea)} \
 <div id="simulating-lying-children" class="section level1">
 <h1>Simulating lying children</h1>
 <p>In this section, we’ll simulate data with made up parameters then use Stan to recover them. This is something you should get use to as a Baysian practitioner. It represents the bigger picture of Bayesian data analysis. We specify the data generating process by simulating the data we are expecting to see. We then encode that simulation code in Stan but leave our unknowns as parameters. Finally, we feed Stan real data and let it search around for the paramers that best describe it.</p>
-<p>In the code below, note how our model, <span class="math inline">\(pi_i = s_ip_{drink} + (1 - s_i)p_{cheat}\)</span>, is represented directy in this code block.</p>
+<p>The code below simulates our data set. Notice how we are basically encoding the mathematical model described above directly in to the code. In particular, line 23 is the R code representation of our likelihood, <span class="math inline">\(pi_i = s_ip_{drink} + (1 - s_i)p_{cheat}\)</span>.</p>
 <pre class="r"><code># The seed makes our analysis repeatable
 set.seed(1)
 # There are 100 children in the village
@@ -183,7 +183,7 @@ model{
     }
   }
 }</code></pre>
-<p>Now, lets take our model and condition it on our simulated data to see if we recovered our parameters. Indeed, we have recovered them. Our 95% credible intervals contain the original parameters from our simulation.</p>
+<p>Finally, lets take our model and condition it on our simulated data to see if we recovered our parameters. The code below runs our stan model on the data.</p>
 <pre class="r"><code>stan_fit &lt;- sampling(stan_model, compose_data(df),
          chains = 4, cores = 4, refresh = 0,
          control = list(adapt_delta = .99))
@@ -198,42 +198,47 @@ print(stan_fit, probs = c(.05, .95))</code></pre>
 ## sigma     0.74    0.00 0.05   0.66   0.81  2024    1
 ## lp__    -79.89    0.03 1.22 -82.32 -78.54  1409    1
 ## 
-## Samples were drawn using NUTS(diag_e) at Sun Feb  9 16:03:45 2020.
+## Samples were drawn using NUTS(diag_e) at Sun Feb 23 18:54:44 2020.
 ## For each parameter, n_eff is a crude measure of effective sample size,
 ## and Rhat is the potential scale reduction factor on split chains (at 
 ## convergence, Rhat=1).</code></pre>
-<p>An awesome benefit of Bayesian data analysis is that we get to work with a posterior afterwards. In the next section, we’ll take advantage of this by using this rich understanding of our parameters in our decision making process.</p>
-<pre class="r"><code>df_posterior &lt;- gather_draws(stan_fit, p_cheat, p_drink, sigma)
+<p>Indeed, we have recovered them. Our 95% credible intervals contain the original parameters from our simulation. An awesome benefit of Bayesian data analysis is that we get to work with a posterior afterwards. In the next section, we’ll take advantage of this by using this rich understanding of our parameters in our decision making process. The plot below describes the uncertainty about our parameter estimation and overlays the true values of those parameters.</p>
+<pre class="r"><code>df_posterior &lt;- spread_draws(stan_fit, p_cheat, p_drink, sigma)
 
-p1 &lt;- df_posterior %&gt;% 
-  ggplot(aes(.value)) +
+plot_posterior_density &lt;- function(x, p=.95) {
+  .hdi &lt;- HDInterval::hdi(x, p)
+  .mean = mean(x)
+  
+  enframe(x) %&gt;% 
+    ggplot(aes(value)) +
     stat_density(geom = &quot;line&quot;, color = &quot;steelblue&quot;) +
-    scale_y_continuous(NULL, NULL) +
-    scale_x_continuous(breaks = seq(from = 0, to = 1, by = .1)) +
-    facet_wrap(~ .variable, ncol = 1, scales = &quot;free_y&quot;) +
-    theme(axis.line.x.bottom = element_line(),
-        panel.grid.major.x = element_line(color = &quot;white&quot;, size = 1)) +
-    labs(x = &quot;Posterior Value&quot;,
-         title = &quot;Parameter Fit&quot;)
+    geom_segment(aes(y=0,yend=0, x = .hdi[[1]], xend = .hdi[[2]]),
+                 color = &quot;steelblue&quot;) +
+    geom_point(aes(y=0, x = .mean),
+               shape = 1, size = 2, color = &quot;steelblue&quot;)
 
-p2 &lt;- df_posterior %&gt;% 
-  mutate(chain = as.factor(.chain)) %&gt;% 
-  ggplot(aes(y = .value, x = .iteration, color = chain)) +
-    geom_line(alpha = .5) +
-    facet_wrap(~ .variable, ncol = 1, scales = &quot;free_y&quot;) +
-    scale_color_viridis_d() +
-    theme(axis.line.x.bottom = element_line(),
-          axis.ticks.y = element_line(),
-          panel.grid.major.y = element_line(color = &quot;white&quot;, size = 1)) +
-    labs(y = &quot;&quot;, x = &quot;Iteration&quot;,
-         title = &quot;Parameter Exploration&quot;)
+}
 
-p1 + p2 + patchwork::plot_annotation(caption=&quot;Posterior distrubtion and exploration about free parameters\n4 parallel chains from Stan&#39;s NUTS-HMC sampler&quot;)</code></pre>
-<p><img src="/post/Bayesian_tea_and_oxen_files/figure-html/unnamed-chunk-7-1.png" width="672" /></p>
+p1 &lt;- plot_posterior_density(df_posterior$p_cheat) + ggtitle(&quot;p_cheat&quot;) +
+  geom_vline(xintercept = p_cheat, color = &quot;black&quot;, linetype = 2) +
+  xlab(&quot;&quot;) + scale_y_continuous(NULL, NULL)
+p2 &lt;- plot_posterior_density(df_posterior$p_drink) + ggtitle(&quot;p_drink&quot;) +
+  geom_vline(xintercept = p_drink, color = &quot;black&quot;, linetype = 2) +
+  xlab(&quot;&quot;) + scale_y_continuous(NULL, NULL)
+p3 &lt;- plot_posterior_density(df_posterior$sigma) + ggtitle(&quot;sigma&quot;) +
+  geom_vline(xintercept = p_stabled, color = &quot;black&quot;, linetype = 2) +
+  xlab(&quot;Posterior Value&quot;) + scale_y_continuous(NULL, NULL)
+(p1 / p2 / p3) *
+  scale_x_continuous(breaks = seq(from=0, to = 1, by = .1), limits = c(0,1)) *
+  theme(panel.grid.major.x = element_line(color = &quot;white&quot;, size = 1.5),
+        plot.title = element_text(hjust = 0.5)) +
+  plot_annotation(title = &quot;Posterior distributions recover true parameter values&quot;, 
+                  subtitle = &quot;Shown with 95% credibility about the mean and true values as dotted lines&quot;)</code></pre>
+<p><img src="/post/Bayesian_tea_and_oxen_files/figure-html/unnamed-chunk-7-1.png" width="768" /></p>
 </div>
 <div id="to-shame-or-not-to-shame" class="section level1">
 <h1>To shame or not to shame</h1>
-<p>In real life, we are almost never totally certain about the true value of parameters like these. Our uncertainty is represented in the “spread” of the posterior distributions above. The cool thing about Bayesian data analysis is that we get to propagate this uncertainty forward in to our decision making process. So, based on what we know, what does tea drinking tell us about stabling oxen?</p>
+<p>In real life, we are almost never totally certain about the true value of parameters like these. Our uncertainty is represented in the “spread” of the posterior distributions above. The cool thing about Bayesian data analysis is that we get to propagate this uncertainty forward in to our decision making process. So, based on what we know, what does tea drinking tell us about stabling oxen? The graph below uses the equations backed out earlier to describe the chances of unstabled oxen given tea status. We get this information through the magic of the posterior.</p>
 <pre class="r"><code>df_posterior &lt;- spread_draws(stan_fit, p_cheat, p_drink, sigma)
 
 df_posterior &lt;- df_posterior %&gt;% 
@@ -244,7 +249,7 @@ hdi_nt &lt;- HDInterval::hdi(df_posterior$`Pr(No_Ox|tea)`)
 
 p1 &lt;- df_posterior %&gt;% 
   ggplot(aes(`Pr(No_Ox|tea)`)) +
-  stat_density(geom = &quot;line&quot;, color = &quot;steelblue&quot;) +
+  stat_density(geom = &quot;line&quot;, color = &quot;steelblue&quot;, bw = .01) +
   geom_segment(aes(y=0,yend=0, x = hdi_nt[[1]], xend = hdi_nt[[2]]),
                color = &quot;steelblue&quot;) +
   geom_point(aes(y=0, x = mean(df_posterior$`Pr(No_Ox|tea)`)),
@@ -265,7 +270,7 @@ hdi_nn &lt;- HDInterval::hdi(df_posterior$`Pr(No_Ox|no_tea)`)
 
 p2 &lt;- df_posterior %&gt;% 
   ggplot(aes(`Pr(No_Ox|no_tea)`)) +
-  stat_density(geom = &quot;line&quot;, color = &quot;steelblue&quot;) +
+  stat_density(geom = &quot;line&quot;, color = &quot;steelblue&quot;, bw = .01) +
   geom_segment(aes(y=0,yend=0, x = hdi_nn[[1]], xend = hdi_nn[[2]]),
                color = &quot;steelblue&quot;) +
   geom_point(aes(y=0, x = mean(df_posterior$`Pr(No_Ox|no_tea)`)),
@@ -277,6 +282,6 @@ p2 &lt;- df_posterior %&gt;%
         panel.grid.major.x = element_line(color = &quot;white&quot;, size = 1)) 
 
 p1 / p2</code></pre>
-<p><img src="/post/Bayesian_tea_and_oxen_files/figure-html/unnamed-chunk-8-1.png" width="672" /></p>
+<p><img src="/post/Bayesian_tea_and_oxen_files/figure-html/unnamed-chunk-8-1.png" width="768" /></p>
 <p>Alright, we’ve gone through a journey from a small Chinese village all the way to mixture models. So should we check in on the children’s stables when they aren’t drinking tea? Our next step would be to definie a utility function that describes how much we value embarrassment vs. catching rule breakers. We can ultimately match those up with our posterior distributions and utilize Bayesian decision theory to do whats best. This is a topic we’ll work on in another post.</p>
 </div>

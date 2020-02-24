@@ -72,9 +72,9 @@ $$
 
 Complexity arises from the fact that we don't observe all stables, $s_i$. We deal with this in line 3. We let the "stabling proportion" be a parameter in our model and let Stan average over our ignorance. This means $\sigma$ will just represent the average proportion of children who stable. We may think that it would have been better to just throw out those observations and move on... but there is information captured by the other variables that help stan understand, among other things, the average tea drinking rate regardless of stable status. In general, its good practice _not_ to throw out the observations. Bayesian data analysis shows us how and lets us propagate our uncertainty forward to our parameter estimates. 
 
-Finally, We chose mildly regularizing priors in the last 3 lines for the probability of cheating, drinking, and proportion of children who stable.
+Finally, We chose mildly regularizing priors in the last 3 lines for the probability of cheating, drinking, and proportion of children who stable. The code below simulates and plots that prior.
 
-```{r fig.height=2.5, fig.width=6, fig.align='center', out.extra='angle=90'}
+```{r fig.height=2.5, fig.width=10}
 tdf <- tibble(x = rbeta(1e4, 2, 2)) 
 interval <- HDInterval::hdi(tdf$x)
 
@@ -129,7 +129,7 @@ Okay, now that we've figured out the math, lets take it to the data,
 
 In this section, we'll simulate data with made up parameters then use Stan to recover them. This is something you should get use to as a Baysian practitioner. It represents the bigger picture of Bayesian data analysis. We specify the data generating process by simulating the data we are expecting to see. We then encode that simulation code in Stan but leave our unknowns as parameters. Finally, we feed Stan real data and let it search around for the paramers that best describe it.
 
-In the code below, note how our model, $pi_i = s_ip_{drink} + (1 - s_i)p_{cheat}$, is represented directy in this code block.
+The code below simulates our data set. Notice how we are basically encoding the mathematical model described above directly in to the code. In particular, line 23 is the R code representation of our likelihood, $pi_i = s_ip_{drink} + (1 - s_i)p_{cheat}$.
 ```{r}
 # The seed makes our analysis repeatable
 set.seed(1)
@@ -159,7 +159,7 @@ df <- tibble(stabled, stabled_obs, tea)
 head(df)
 ```
 
-The data set above represents us "playing our model forward." We picked paramers and ran it through our model to see what kind of data it would generate. Now, we "play our model backwards" by encoding it in stan and conditioning our newly uknown parameters, $p_{drink}$, $p_{cheat}$, and $s_i$, on our simulated data. 
+The data set above represents us "playing our model forward." We picked paramers and ran it through our model to see what kind of data it would generate. Now, we "play our model backwards" by encoding it in stan and conditioning our newly uknown parameters, $p_{drink}$, $p_{cheat}$, and $s_i$, on our simulated data.
 
 If you haven't seen Stan code before, here is a quick overview. The first section labled `data` just describes the kind of data we'll pass in. The second section labled `parameters` tells stan which parameters it needs to solve for. There you'll see our usual suspects. The third section labled `model` describes our prior and likelihood. We won't get in to priors in this post, but this section tells Stan how to evaluate how good a set of candidate parameters are by calculating how well it describes the data.
 
@@ -201,7 +201,7 @@ model{
 }
 ```
 
-Now, lets take our model and condition it on our simulated data to see if we recovered our parameters. Indeed, we have recovered them. Our 95% credible intervals contain the original parameters from our simulation.
+Finally, lets take our model and condition it on our simulated data to see if we recovered our parameters. The code below runs our stan model on the data. 
 ```{r message=FALSE, warning=FALSE}
 stan_fit <- sampling(stan_model, compose_data(df),
          chains = 4, cores = 4, refresh = 0,
@@ -209,41 +209,47 @@ stan_fit <- sampling(stan_model, compose_data(df),
 print(stan_fit, probs = c(.05, .95))
 ```
 
-An awesome benefit of Bayesian data analysis is that we get to work with a posterior afterwards. In the next section, we'll take advantage of this by using this rich understanding of our parameters in our decision making process.
+Indeed, we have recovered them. Our 95% credible intervals contain the original parameters from our simulation. An awesome benefit of Bayesian data analysis is that we get to work with a posterior afterwards. In the next section, we'll take advantage of this by using this rich understanding of our parameters in our decision making process. The plot below describes the uncertainty about our parameter estimation and overlays the true values of those parameters.
 
-```{r fig.height=3.8, fig.width=7}
-df_posterior <- gather_draws(stan_fit, p_cheat, p_drink, sigma)
+```{r fig.height=4, fig.width=8}
+df_posterior <- spread_draws(stan_fit, p_cheat, p_drink, sigma)
 
-p1 <- df_posterior %>% 
-  ggplot(aes(.value)) +
+plot_posterior_density <- function(x, p=.95) {
+  .hdi <- HDInterval::hdi(x, p)
+  .mean = mean(x)
+  
+  enframe(x) %>% 
+    ggplot(aes(value)) +
     stat_density(geom = "line", color = "steelblue") +
-    scale_y_continuous(NULL, NULL) +
-    scale_x_continuous(breaks = seq(from = 0, to = 1, by = .1)) +
-    facet_wrap(~ .variable, ncol = 1, scales = "free_y") +
-    theme(axis.line.x.bottom = element_line(),
-        panel.grid.major.x = element_line(color = "white", size = 1)) +
-    labs(x = "Posterior Value",
-         title = "Parameter Fit")
+    geom_segment(aes(y=0,yend=0, x = .hdi[[1]], xend = .hdi[[2]]),
+                 color = "steelblue") +
+    geom_point(aes(y=0, x = .mean),
+               shape = 1, size = 2, color = "steelblue")
 
-p2 <- df_posterior %>% 
-  mutate(chain = as.factor(.chain)) %>% 
-  ggplot(aes(y = .value, x = .iteration, color = chain)) +
-    geom_line(alpha = .5) +
-    facet_wrap(~ .variable, ncol = 1, scales = "free_y") +
-    scale_color_viridis_d() +
-    theme(axis.line.x.bottom = element_line(),
-          axis.ticks.y = element_line(),
-          panel.grid.major.y = element_line(color = "white", size = 1)) +
-    labs(y = "", x = "Iteration",
-         title = "Parameter Exploration")
+}
 
-p1 + p2 + patchwork::plot_annotation(caption="Posterior distrubtion and exploration about free parameters\n4 parallel chains from Stan's NUTS-HMC sampler")
+p1 <- plot_posterior_density(df_posterior$p_cheat) + ggtitle("p_cheat") +
+  geom_vline(xintercept = p_cheat, color = "black", linetype = 2) +
+  xlab("") + scale_y_continuous(NULL, NULL)
+p2 <- plot_posterior_density(df_posterior$p_drink) + ggtitle("p_drink") +
+  geom_vline(xintercept = p_drink, color = "black", linetype = 2) +
+  xlab("") + scale_y_continuous(NULL, NULL)
+p3 <- plot_posterior_density(df_posterior$sigma) + ggtitle("sigma") +
+  geom_vline(xintercept = p_stabled, color = "black", linetype = 2) +
+  xlab("Posterior Value") + scale_y_continuous(NULL, NULL)
+(p1 / p2 / p3) *
+  scale_x_continuous(breaks = seq(from=0, to = 1, by = .1), limits = c(0,1)) *
+  theme(panel.grid.major.x = element_line(color = "white", size = 1.5),
+        plot.title = element_text(hjust = 0.5)) +
+  plot_annotation(title = "Posterior distributions recover true parameter values", 
+                  subtitle = "Shown with 95% credibility about the mean and true values as dotted lines")
 ```
+
 
 # To shame or not to shame
 
-In real life, we are almost never totally certain about the true value of parameters like these. Our uncertainty is represented in the "spread" of the posterior distributions above. The cool thing about Bayesian data analysis is that we get to propagate this uncertainty forward in to our decision making process. So, based on what we know, what does tea drinking tell us about stabling oxen?
-```{r fig.height=3, fig.width=7}
+In real life, we are almost never totally certain about the true value of parameters like these. Our uncertainty is represented in the "spread" of the posterior distributions above. The cool thing about Bayesian data analysis is that we get to propagate this uncertainty forward in to our decision making process. So, based on what we know, what does tea drinking tell us about stabling oxen? The graph below uses the equations backed out earlier to describe the chances of unstabled oxen given tea status. We get this information through the magic of the posterior.
+```{r fig.height=3, fig.width=8}
 df_posterior <- spread_draws(stan_fit, p_cheat, p_drink, sigma)
 
 df_posterior <- df_posterior %>% 
@@ -254,7 +260,7 @@ hdi_nt <- HDInterval::hdi(df_posterior$`Pr(No_Ox|tea)`)
 
 p1 <- df_posterior %>% 
   ggplot(aes(`Pr(No_Ox|tea)`)) +
-  stat_density(geom = "line", color = "steelblue") +
+  stat_density(geom = "line", color = "steelblue", bw = .01) +
   geom_segment(aes(y=0,yend=0, x = hdi_nt[[1]], xend = hdi_nt[[2]]),
                color = "steelblue") +
   geom_point(aes(y=0, x = mean(df_posterior$`Pr(No_Ox|tea)`)),
@@ -275,7 +281,7 @@ hdi_nn <- HDInterval::hdi(df_posterior$`Pr(No_Ox|no_tea)`)
 
 p2 <- df_posterior %>% 
   ggplot(aes(`Pr(No_Ox|no_tea)`)) +
-  stat_density(geom = "line", color = "steelblue") +
+  stat_density(geom = "line", color = "steelblue", bw = .01) +
   geom_segment(aes(y=0,yend=0, x = hdi_nn[[1]], xend = hdi_nn[[2]]),
                color = "steelblue") +
   geom_point(aes(y=0, x = mean(df_posterior$`Pr(No_Ox|no_tea)`)),
