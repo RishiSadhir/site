@@ -82,7 +82,7 @@
 <p>As enforcers, we think observing children drinking tea will give us some information on whether or not they stabled their Ox. We also don’t want to check every single child because we associate some personal cost to the embarrasment we’d feel if we were wrong. We need a model to help us reason about all this.</p>
 <div id="preliminaries" class="section level1">
 <h1>Preliminaries</h1>
-<p>This post is targeted at folks who already have an understanding of bayesian statistics. Throughout, I’ll use <a href="https://mc-stan.org/">Stan</a> as my primary modeling tool. There is a lot you can do to make your Stan code more efficient but this post shoots for interpretability. To learn more about Bayesian Statistics and Stan, I highly recommend Richard’s book <a href="https://xcelab.net/rm/statistical-rethinking/">Statistical Rethinking</a> and the wonderful documentation on the Stan website.</p>
+<p>This post is targeted at folks who already have an understanding of bayesian statistics. Throughout, I’ll use <a href="https://mc-stan.org/">Stan</a> as my primary modeling tool. There is a lot you can do to make your Stan code more efficient but this post shoots for interpretability. To learn more about Bayesian Statistics and Stan, start with my blog post <a href="https://www.rishisadhir.com/2020/02/08/intro-to-bayes-part-1/">here</a>. I also highly recommend Richard’s book <a href="https://xcelab.net/rm/statistical-rethinking/">Statistical Rethinking</a> and the wonderful documentation on the Stan website.</p>
 <pre class="r"><code># Interface with Stan
 library(rstan)
 # Helpers for working with Stan
@@ -259,7 +259,7 @@ print(stan_fit, probs = c(.05, .95))</code></pre>
 ## sigma     0.74    0.00 0.05   0.66   0.81  2024    1
 ## lp__    -79.89    0.03 1.22 -82.32 -78.54  1409    1
 ## 
-## Samples were drawn using NUTS(diag_e) at Sun Feb 23 18:54:44 2020.
+## Samples were drawn using NUTS(diag_e) at Fri Feb 28 22:33:46 2020.
 ## For each parameter, n_eff is a crude measure of effective sample size,
 ## and Rhat is the potential scale reduction factor on split chains (at 
 ## convergence, Rhat=1).</code></pre>

@@ -7,7 +7,7 @@ categories: ["R", "Bayesian", "Statistics"]
 tags: ["R", "Bayesian", "Statistics"]
 ---
 
-One of my favorite things about being a data scientist is running experiments. Often, data science teams will run a lot of repeated and related experiments about the same general thing - Usually, because we only have some short window to learn something or some other constraints. We run experiments to recover an *effect size* for something we care about. When the experiment is over, we have typically measured an effect size with some *uncertainty* (like a standard error) about this measurement. The data and results repeated experiments generate are probably applicable to each other, but how do we take advantage of that?
+One of my favorite things about being a data scientist is running experiments. Often, data science teams will run a lot of experiments that aim to measure the same thing - Usually because we only have some short window to learn something or some other constraints. The purpose of most experiments is to recover an *effect size* for something we care about. When the experiment is over, we have typically measured this effect size with some *uncertainty* (like a standard error) about this measurement. The data and results repeated experiments generate are probably applicable to each other, but how do we take advantage of that?
 
 When you repeat studies, there are three ways of looking at it.
 
@@ -18,7 +18,7 @@ When you repeat studies, there are three ways of looking at it.
 This third possibility takes the middle road between 1 and 2 and is the pragmatic approach that we’ll talk about in this blog post. We’ll use Bayesian hierarchical regressions to perform a meta analysis on a group of studies to determine what the true underlying effect was that those studies were trying to measure.
 
 # Preliminaries
-This post is targeted at folks who already have an understanding of bayesian statistics. Throughout, I'll use [Stan](https://mc-stan.org/) as my primary modeling tool. There is a lot you can do to make your Stan code more efficient but this post shoots for interpretability. To learn more about Bayesian Statistics and Stan, I highly recommend Richard's book [Statistical Rethinking](https://xcelab.net/rm/statistical-rethinking/) and the wonderful documentation on the Stan website.
+This post is targeted at folks who already have an understanding of bayesian statistics. Throughout, I'll use [Stan](https://mc-stan.org/) as my primary modeling tool. There is a lot you can do to make your Stan code more efficient but this post shoots for interpretability. To learn more about Bayesian Statistics and Stan, start with my blog post [here](https://www.rishisadhir.com/2020/02/08/intro-to-bayes-part-1/). I also highly recommend Richard's book [Statistical Rethinking](https://xcelab.net/rm/statistical-rethinking/) and the wonderful documentation on the Stan website.
 
 ```{r message=FALSE, warning=FALSE}
 # Interface with Stan
@@ -579,6 +579,7 @@ In this blog post, I wanted to convince you of two things:
 > The way these different methods are presented (regression, meta-analysis, ANOVA, …), it is quite easy for a beginner, like me, to lose sight of the forest for the trees. I also feel that this is a general experience for students of applied statistics: Every experiment, situation, and question results in a different statistical method (or worse: “Which test should I use?”), and the student doesn’t see how the methods relate to each other. So I think focusing on the (regression) model is key, but often overlooked in favor of this sort of decision tree model of choosing statistical methods - McElreath, 2016, p.2
 
 Further advice for aspiring data scientists:
+
 1. You should consider adding hierarchical regression to your toolset. There are Bayesian and frequentist analogues so don’t feel like you need to go Bayesian to learn it.
 2. Focus on learning generalized version of your toolkit instead of use case specific tooling.
 3. Consider your whole data generating process when analyzing data. Take advantage of measurement error and propagate it to your downstream analyses.

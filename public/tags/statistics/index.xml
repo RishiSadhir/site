@@ -17,7 +17,7 @@
       <pubDate>Fri, 28 Feb 2020 00:00:00 +0000</pubDate>
       
       <guid>/2020/02/28/embracing-uncertainty/</guid>
-      <description>One of my favorite things about being a data scientist is running experiments. Often, data science teams will run a lot of repeated and related experiments about the same general thing - Usually, because we only have some short window to learn something or some other constraints. We run experiments to recover an effect size for something we care about. When the experiment is over, we have typically measured an effect size with some uncertainty (like a standard error) about this measurement.</description>
+      <description>One of my favorite things about being a data scientist is running experiments. Often, data science teams will run a lot of experiments that aim to measure the same thing - Usually because we only have some short window to learn something or some other constraints. The purpose of most experiments is to recover an effect size for something we care about. When the experiment is over, we have typically measured this effect size with some uncertainty (like a standard error) about this measurement.</description>
     </item>
     
     <item>

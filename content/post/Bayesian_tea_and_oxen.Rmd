@@ -19,7 +19,7 @@ This is a retelling of Richard McElreath's [story](https://elevanth.org/blog/201
 As enforcers, we think observing children drinking tea will give us some information on whether or not they stabled their Ox. We also don't want to check every single child because we associate some personal cost to the embarrasment we'd feel if we were wrong. We need a model to help us reason about all this.
 
 # Preliminaries
-This post is targeted at folks who already have an understanding of bayesian statistics. Throughout, I'll use [Stan](https://mc-stan.org/) as my primary modeling tool. There is a lot you can do to make your Stan code more efficient but this post shoots for interpretability. To learn more about Bayesian Statistics and Stan, I highly recommend Richard's book [Statistical Rethinking](https://xcelab.net/rm/statistical-rethinking/) and the wonderful documentation on the Stan website.
+This post is targeted at folks who already have an understanding of bayesian statistics. Throughout, I'll use [Stan](https://mc-stan.org/) as my primary modeling tool. There is a lot you can do to make your Stan code more efficient but this post shoots for interpretability. To learn more about Bayesian Statistics and Stan, start with my blog post [here](https://www.rishisadhir.com/2020/02/08/intro-to-bayes-part-1/). I also highly recommend Richard's book [Statistical Rethinking](https://xcelab.net/rm/statistical-rethinking/) and the wonderful documentation on the Stan website.
 
 ```{r message=FALSE, warning=FALSE}
 # Interface with Stan
