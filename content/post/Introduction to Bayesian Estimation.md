@@ -28,7 +28,7 @@ To introduce these concepts and build intuition, we'll work through a cannonical
 So, lets formalize the first step in our analysis. Lets formally define the model we are interested in fitting. For us, that is pretty simple:
 
 \begin{align}
-is\_head_i \sim Bernoulli(\theta) \\\\\\
+is\\\_head_i \sim Bernoulli(\theta) \\\\\\
 \theta \sim Beta(20, 20)
 \end{align}
 
