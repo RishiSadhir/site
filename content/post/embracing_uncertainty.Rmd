@@ -573,7 +573,7 @@ In this blog post, I wanted to convince you of two things:
 1. A fundamental part of data science is to manage uncertainty. This is of equal importance to the other kinds of results we show. In this post, I first showcase a principled ways to discover and visualize uncertainty then I show how we can propagate and reuse uncertainty across inference tasks.
 2. As scientists, we should consider mastering broadly applicable toolsets and avoid using highly use-case specific tools. In particular, I advocate for adding hierarchical regressions to your toolbox by showing how meta-analysis, anova, and measurement-error models are just special cases of hierarchical regression.
 
-![png](/post/embracing_uncertainty_files/figure-html/flow.png)
+![Flowhcart of madness](/post/embracing_uncertainty_files/figure-html/flow.png)
 
 > The way these different methods are presented (regression, meta-analysis, ANOVA, …), it is quite easy for a beginner, like me, to lose sight of the forest for the trees. I also feel that this is a general experience for students of applied statistics: Every experiment, situation, and question results in a different statistical method (or worse: “Which test should I use?”), and the student doesn’t see how the methods relate to each other. So I think focusing on the (regression) model is key, but often overlooked in favor of this sort of decision tree model of choosing statistical methods - McElreath, 2016, p.2
 
