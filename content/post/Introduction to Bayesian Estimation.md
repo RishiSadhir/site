@@ -23,7 +23,7 @@ Many of us were trained using a frequentist approach to statistics where paramet
 
 The Bayesian approach is a different way of thinking about statistics. Parameters are treated as random variables and described with probability distributions. The distribtion tells us our belief about specific values of the parameters.
 
-To introduce these concepts and build intuition, we'll work through a cannonical coin toss example. We'll use $\\\theta$ to denote the probability of getting heads, $1$, and $(1-\\\theta)$ will refer to the probability of getting tails, $0$.
+To introduce these concepts and build intuition, we'll work through a cannonical coin toss example. We'll use theta to denote the probability of getting heads, 1, and (1-theta) will refer to the probability of getting tails, 0.
 
 So, lets formalize the first step in our analysis. Lets formally define the model we are interested in fitting. For us, that is pretty simple:
 
@@ -32,11 +32,11 @@ is\\\_head_i \sim Bernoulli(\theta) \\\\\\
 \theta \sim Beta(20, 20)
 \end{align}
 
-All we are saying here is that each coin flip is a bernoulli draw where the probability of getting heads is defined by the value of $\theta$. To complete our analysis, we'll need to define a prior for $\theta$, condition the model on some data, then examine the posterior distribution.
+All we are saying here is that each coin flip is a bernoulli draw where the probability of getting heads is defined by the value of theta. To complete our analysis, we'll need to define a prior for theta, condition the model on some data, then examine the posterior distribution.
 
 ### Prior distributions
 
-The second line of our model is the prior distribution we chose for the parameter $\theta$. A prior distribution is just a mathematical expression that defines our belief about the distribution of the parameter. 
+The second line of our model is the prior distribution we chose for the parameter theta. A prior distribution is just a mathematical expression that defines our belief about the distribution of the parameter. 
 
 The prior can be based on what we know about the physical world, assumptions about our model, or previous experience. Common sense would suggest that the probability of heads is closer to 0.5, and I could express this belief mathematically by specifying parameters of my beta distribution. Figure 1 below shows a beta distribution with parameters 20 and 20 and compares it against a complete flat prior with parameters 1 and 1.
 
@@ -92,7 +92,7 @@ obs_coin_flips
 
 This is the first line in the model we specified. It defines the likelihood function in our model. The binomial probability distribution is often used to quantify the probability of the number of successes out of a fixed number of trials. 
 
-The blue line in figure 2 shows a binomial likelihood function for $\\\theta$ given 3 heads out of 9 coin tosses. The y-axis is rescaled so that the area under the curve equals one. This allows us to compare the likelihood function with the prior distribution.
+The blue line in figure 2 shows a binomial likelihood function for theta given 3 heads out of 9 coin tosses. The y-axis is rescaled so that the area under the curve equals one. This allows us to compare the likelihood function with the prior distribution.
 
 
 ```python
@@ -106,7 +106,7 @@ y_prior = density(x_pdf)/density(x_pdf).sum(axis=0,keepdims=1)
 y_pdf = y_pdf / y_pdf.sum(axis=0, keepdims=1)
 
 # Overlay densitites
-fig, ax = plt.subplots(figsize=(14,3))
+fig, ax = plt.subplots(figsize=(14,3))n
 ax.plot(x_pdf, y_prior, label = "Normalized Prior: Beta(20, 20)")
 ax.plot(x_pdf, y_pdf, label = "Normalized Likelihood: Binomial(9, 3, $\\theta$)")
 ax.set_title("Figure 2: Likelihood of seeing our data")
@@ -167,7 +167,7 @@ Notice that the posterior closely resembles the prior distribution. This is beca
 
 ### Using the posterior
 
-After we calculate the posterior distribution, we can calculate the mean or median of the posterior distribution, a 95% equal tail credible interval, the probability that $\\\theta$ lies within an interval, and many other statistics.
+After we calculate the posterior distribution, we can calculate the mean or median of the posterior distribution, a 95% equal tail credible interval, the probability that theta lies within an interval, and many other statistics.
 
 
 ```python
