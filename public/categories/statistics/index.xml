@@ -6,10 +6,19 @@
     <description>Recent content in Statistics on Rishi Sadhir&#39;s personal blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 08 Feb 2020 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Fri, 28 Feb 2020 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="/categories/statistics/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Embracing Uncertainty</title>
+      <link>/2020/02/28/embracing-uncertainty/</link>
+      <pubDate>Fri, 28 Feb 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/2020/02/28/embracing-uncertainty/</guid>
+      <description>One of my favorite things about being a data scientist is running experiments. Often, data science teams will run a lot of repeated and related experiments about the same general thing - Usually, because we only have some short window to learn something or some other constraints. We run experiments to recover an effect size for something we care about. When the experiment is over, we have typically measured an effect size with some uncertainty (like a standard error) about this measurement.</description>
+    </item>
     
     <item>
       <title>Intro to Bayes: Part 1</title>

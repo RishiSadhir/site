@@ -80,15 +80,15 @@ plt<span style="color:#f92672">.</span>style<span style="color:#f92672">.</span>
 </code></pre></div><h3 id="bayesian-statistics">Bayesian Statistics</h3>
 <p>Many of us were trained using a frequentist approach to statistics where parameters are treated as fixed but unknown quantities. In this paradigm, we estimate parameters using samples from a population. New samples give us new estimates, hopefully centered around the true value. The distribution of these different estimates is called the sampling distribution, and it quantifies the uncertainty of our estimate. Importantly, though, the parameter itself is still considered fixed.</p>
 <p>The Bayesian approach is a different way of thinking about statistics. Parameters are treated as random variables and described with probability distributions. The distribtion tells us our belief about specific values of the parameters.</p>
-<p>To introduce these concepts and build intuition, we'll work through a cannonical coin toss example. We'll use $\theta$ to denote the probability of getting heads, $1$, and $(1-\theta)$ will refer to the probability of getting tails, $0$.</p>
+<p>To introduce these concepts and build intuition, we'll work through a cannonical coin toss example. We'll use theta to denote the probability of getting heads, 1, and (1-theta) will refer to the probability of getting tails, 0.</p>
 <p>So, lets formalize the first step in our analysis. Lets formally define the model we are interested in fitting. For us, that is pretty simple:</p>
 <p>\begin{align}
-is_head_i \sim Bernoulli(\theta) \\\<br>
+is\_head_i \sim Bernoulli(\theta) \\\<br>
 \theta \sim Beta(20, 20)
 \end{align}</p>
-<p>All we are saying here is that each coin flip is a bernoulli draw where the probability of getting heads is defined by the value of $\theta$. To complete our analysis, we'll need to define a prior for $\theta$, condition the model on some data, then examine the posterior distribution.</p>
+<p>All we are saying here is that each coin flip is a bernoulli draw where the probability of getting heads is defined by the value of theta. To complete our analysis, we'll need to define a prior for theta, condition the model on some data, then examine the posterior distribution.</p>
 <h3 id="prior-distributions">Prior distributions</h3>
-<p>The second line of our model is the prior distribution we chose for the parameter $\theta$. A prior distribution is just a mathematical expression that defines our belief about the distribution of the parameter.</p>
+<p>The second line of our model is the prior distribution we chose for the parameter theta. A prior distribution is just a mathematical expression that defines our belief about the distribution of the parameter.</p>
 <p>The prior can be based on what we know about the physical world, assumptions about our model, or previous experience. Common sense would suggest that the probability of heads is closer to 0.5, and I could express this belief mathematically by specifying parameters of my beta distribution. Figure 1 below shows a beta distribution with parameters 20 and 20 and compares it against a complete flat prior with parameters 1 and 1.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">prior_beta_uninformative <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>beta<span style="color:#f92672">.</span>rvs(<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>, size <span style="color:#f92672">=</span> <span style="color:#ae81ff">1000</span>)
 density <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>gaussian_kde(prior_beta_uninformative)
@@ -119,7 +119,7 @@ obs_coin_flips
 </code></pre></div><pre><code>array([1, 1, 1, 0, 0, 0, 0, 0, 0])
 </code></pre>
 <p>This is the first line in the model we specified. It defines the likelihood function in our model. The binomial probability distribution is often used to quantify the probability of the number of successes out of a fixed number of trials.</p>
-<p>The blue line in figure 2 shows a binomial likelihood function for $\theta$ given 3 heads out of 9 coin tosses. The y-axis is rescaled so that the area under the curve equals one. This allows us to compare the likelihood function with the prior distribution.</p>
+<p>The blue line in figure 2 shows a binomial likelihood function for theta given 3 heads out of 9 coin tosses. The y-axis is rescaled so that the area under the curve equals one. This allows us to compare the likelihood function with the prior distribution.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># Calculate binomial likelihood of seeing our</span>
 <span style="color:#75715e"># data for 200 points between 0 and 1.</span>
 x_pdf <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>linspace(<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">200</span>)
@@ -130,7 +130,7 @@ y_prior <span style="color:#f92672">=</span> density(x_pdf)<span style="color:#f
 y_pdf <span style="color:#f92672">=</span> y_pdf <span style="color:#f92672">/</span> y_pdf<span style="color:#f92672">.</span>sum(axis<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>, keepdims<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
 
 <span style="color:#75715e"># Overlay densitites</span>
-fig, ax <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>subplots(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">14</span>,<span style="color:#ae81ff">3</span>))
+fig, ax <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>subplots(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">14</span>,<span style="color:#ae81ff">3</span>))n
 ax<span style="color:#f92672">.</span>plot(x_pdf, y_prior, label <span style="color:#f92672">=</span> <span style="color:#e6db74"></span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">Normalized Prior: Beta(20, 20)</span><span style="color:#e6db74">&#34;</span>)
 ax<span style="color:#f92672">.</span>plot(x_pdf, y_pdf, label <span style="color:#f92672">=</span> <span style="color:#e6db74"></span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">Normalized Likelihood: Binomial(9, 3, $</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">theta$)</span><span style="color:#e6db74">&#34;</span>)
 ax<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74"></span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">Figure 2: Likelihood of seeing our data</span><span style="color:#e6db74">&#34;</span>)
@@ -171,7 +171,7 @@ plt<span style="color:#f92672">.</span>show()
 </code></pre></div><p><img src="../../../../post/intro_bayes_1/figure-html/output_12_0.png" alt="png"></p>
 <p>Notice that the posterior closely resembles the prior distribution. This is because we used an informative prior and a relatively small sample size. If we had used a completely uninformative prior like Beta(1,1), we would see the likelihood completely dominate the data. In practice, this means that we can reduce the standard deviation of the posterior distribution using smaller sample sizes when we use more informative priors. But a similar reduction in the standard deviation may require a larger sample size when we use a weak or uninformative prior.</p>
 <h3 id="using-the-posterior">Using the posterior</h3>
-<p>After we calculate the posterior distribution, we can calculate the mean or median of the posterior distribution, a 95% equal tail credible interval, the probability that $\theta$ lies within an interval, and many other statistics.</p>
+<p>After we calculate the posterior distribution, we can calculate the mean or median of the posterior distribution, a 95% equal tail credible interval, the probability that theta lies within an interval, and many other statistics.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#e6db74"></span><span style="color:#e6db74">&#34;&#34;&#34;</span><span style="color:#e6db74">
 </span><span style="color:#e6db74"></span><span style="color:#e6db74">This code was taken form the PyMC library https://github.com/pymc-devs/pymc</span><span style="color:#e6db74">
 </span><span style="color:#e6db74"></span><span style="color:#e6db74">&#34;&#34;&#34;</span>
