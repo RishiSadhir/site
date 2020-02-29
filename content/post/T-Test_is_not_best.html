@@ -6,13 +6,15 @@ categories: ["R", "Bayesian", "Statistics"]
 tags: ["R", "Bayesian", "Statistics"]
 ---
 
+
+
 <p>In this post, we explore the task of comparing groups of measurements. We’ve all heard about the T-Test, but Bayesian statistics offers an interesting alternative. Let’s talk about how “Bayesian estimation supersedes the t-test” (<a href="https://cran.r-project.org/web/packages/BEST/vignettes/BEST.pdf">Kruschke, 2013</a>).</p>
 <div id="preliminaries" class="section level1">
 <h1>Preliminaries</h1>
 <p>In this post, we’ll encode Kruschke’s methods in STAN and use it to compare action move ratings versus comedy movie ratings. The code shown below is also available in python <a href="https://github.com/RishiSadhir/T-Test-is-not-BEST/blob/master/T-Test%20is%20not%20best.ipynb">here</a> along with the supporting CSV. We make liberal use of the tidyverse grouping of R packages to carry out our analysis. Those unfamiliar can reference the excellent <a href="https://r4ds.had.co.nz/">R4DS</a> book by Hadley Wickham.</p>
 <pre class="r"><code>library(tidyverse)
 library(patchwork) # Stitch together ggplots
-library(viridis) # Be colorblind friendly
+library(viridis) # Be colorblind friendly 
 library(rstan) # Make calls to STAN
 library(tidybayes) # Work with bayesian posteriors
 
@@ -22,8 +24,9 @@ rstan_options(auto_write = TRUE)
 theme_minimal() %+replace%
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
-        plot.background = element_rect(color = &quot;transparent&quot;, fill = &quot;grey90&quot;)) %&gt;%
+        plot.background = element_rect(color = &quot;transparent&quot;, fill = &quot;grey90&quot;)) %&gt;% 
   theme_set()</code></pre>
+<p>This post is targeted at folks who already have an understanding of bayesian statistics. Throughout, I’ll use <a href="https://mc-stan.org/">Stan</a> as my primary modeling tool. There is a lot you can do to make your Stan code more efficient but this post shoots for interpretability. To learn more about Bayesian Statistics and Stan, start with my blog post <a href="https://www.rishisadhir.com/2020/02/08/intro-to-bayes-part-1/">here</a>. I also highly recommend Richard’s book <a href="https://xcelab.net/rm/statistical-rethinking/">Statistical Rethinking</a> and the wonderful documentation on the Stan website.</p>
 </div>
 <div id="comedy-or-action" class="section level1">
 <h1>Comedy or Action?</h1>
@@ -32,22 +35,22 @@ theme_minimal() %+replace%
 
 # Clean up data
 set.seed(1234)  # Set seed so we get the same sampled rows every time
-movies_clean &lt;- movies %&gt;%
-  select(title, year, rating, Action, Comedy) %&gt;%
-  filter(!(Action == 1 &amp; Comedy == 1)) %&gt;%
+movies_clean &lt;- movies %&gt;% 
+  select(title, year, rating, Action, Comedy) %&gt;% 
+  filter(!(Action == 1 &amp; Comedy == 1)) %&gt;% 
   mutate(genre = case_when(Action == 1 ~ &quot;Action&quot;,
                            Comedy == 1 ~ &quot;Comedy&quot;,
                            TRUE ~ &quot;Neither&quot;)) %&gt;%
   filter(genre != &quot;Neither&quot;) %&gt;%
-  group_by(genre) %&gt;%
-  sample_n(200) %&gt;%
-  ungroup() %&gt;%
+  group_by(genre) %&gt;% 
+  sample_n(200) %&gt;% 
+  ungroup() %&gt;% 
   select(-Action, -Comedy)
 
 head(movies_clean)</code></pre>
 <pre><code>## # A tibble: 6 x 4
-##   title                year rating genre
-##   &lt;chr&gt;               &lt;int&gt;  &lt;dbl&gt; &lt;chr&gt;
+##   title                year rating genre 
+##   &lt;chr&gt;               &lt;int&gt;  &lt;dbl&gt; &lt;chr&gt; 
 ## 1 Tarzan Finds a Son!  1939    6.4 Action
 ## 2 Silmido              2003    7.1 Action
 ## 3 Stagecoach           1939    8   Action
@@ -65,18 +68,18 @@ head(movies_clean)</code></pre>
 <p><img src="/post/T-Test_is_not_best_files/figure-html/unnamed-chunk-3-1.png" width="480" /></p>
 <p>Although they look very similar visually, a t-test tells us that they are in fact statistically significantly different with 95% confidence.</p>
 <pre class="r"><code>t.test(filter(movies_clean, genre == &quot;Comedy&quot;)$rating,
-       filter(movies_clean, genre == &quot;Action&quot;)$rating) %&gt;%
+       filter(movies_clean, genre == &quot;Action&quot;)$rating) %&gt;% 
   print</code></pre>
-<pre><code>##
+<pre><code>## 
 ##  Welch Two Sample t-test
-##
+## 
 ## data:  filter(movies_clean, genre == &quot;Comedy&quot;)$rating and filter(movies_clean, genre == &quot;Action&quot;)$rating
 ## t = 2.8992, df = 388.75, p-value = 0.003953
 ## alternative hypothesis: true difference in means is not equal to 0
 ## 95 percent confidence interval:
 ##  0.1400087 0.7299913
 ## sample estimates:
-## mean of x mean of y
+## mean of x mean of y 
 ##     5.842     5.407</code></pre>
 </div>
 <div id="best" class="section level1">
@@ -111,18 +114,18 @@ transformed data {
   sd_rating = sd(rating);
 }
 parameters {
-  vector&lt;lower=0,upper=10&gt;[n_groups] alpha; // Group means
+  vector&lt;lower=0,upper=10&gt;[n_groups] alpha; // Group means 
   vector&lt;lower=0&gt;[n_groups] gamma;          // Group sds
   real&lt;lower=0, upper=100&gt; nu;              // df for t distribution
 }
 model {
   real location;
   real scale;
-
+  
   alpha ~ normal(mean_rating, sd_rating);
   gamma ~ cauchy(0, 1);
   nu ~ cauchy(0, 1);
-
+  
   for (n in 1:N){
     location = alpha[group_id[n]];
     scale = gamma[group_id[n]];
@@ -143,13 +146,13 @@ generated quantities {
   rating = movies_clean$rating,
   group_id = as.integer(fct_rev(movies_clean$genre)))
 
-fit &lt;- sampling(stan_best, data = dlist,
+fit &lt;- sampling(stan_best, data = dlist, 
                 chains = 4, cores = 4, refresh = 0)
 print(fit, probs = c(.05, .95))</code></pre>
 <pre><code>## Inference for Stan model: 4303c9d63e697571bc859d7ca25389fc.
-## 4 chains, each with iter=2000; warmup=1000; thin=1;
+## 4 chains, each with iter=2000; warmup=1000; thin=1; 
 ## post-warmup draws per chain=1000, total post-warmup draws=4000.
-##
+## 
 ##               mean se_mean    sd      5%     95% n_eff Rhat
 ## alpha[1]      5.87    0.00  0.10    5.70    6.04  3135    1
 ## alpha[2]      5.41    0.00  0.11    5.23    5.60  3790    1
@@ -159,17 +162,17 @@ print(fit, probs = c(.05, .95))</code></pre>
 ## mu_diff       0.46    0.00  0.15    0.21    0.72  3684    1
 ## sigma_diff   -0.25    0.00  0.11   -0.43   -0.07  3624    1
 ## lp__       -504.10    0.04  1.61 -507.16 -502.10  1718    1
-##
-## Samples were drawn using NUTS(diag_e) at Sun Feb  9 16:36:55 2020.
+## 
+## Samples were drawn using NUTS(diag_e) at Fri Feb 28 22:29:06 2020.
 ## For each parameter, n_eff is a crude measure of effective sample size,
-## and Rhat is the potential scale reduction factor on split chains (at
+## and Rhat is the potential scale reduction factor on split chains (at 
 ## convergence, Rhat=1).</code></pre>
 <p>MCMC sampling is really cool. It basically “randomly” explores the parameter space in proportion to the how likely sets of parameters are. This exploration is graphed below for the intercepts in our model.</p>
-<pre class="r"><code>post &lt;- fit %&gt;%
+<pre class="r"><code>post &lt;- fit %&gt;% 
   gather_draws(`(alpha.*|gamma.*)`, regex = TRUE) %&gt;%
   mutate(chain = as.factor(.chain))
 
-p1 &lt;- post %&gt;%
+p1 &lt;- post %&gt;% 
   ggplot(aes(x = .iteration, y = .value, color = chain)) +
     geom_line(alpha = .3) +
     facet_wrap(~ .variable, scales = &quot;free&quot;) +
@@ -179,10 +182,10 @@ p1 &lt;- post %&gt;%
     theme(legend.position = &quot;none&quot;,
           panel.grid.major.y = element_line(color = &quot;white&quot;))
 
-p2 &lt;- post %&gt;%
-  mutate(.chain = as.factor(.chain)) %&gt;%
-  group_by(.variable, .chain) %&gt;%
-  mutate(.value = cummean(.value)) %&gt;%
+p2 &lt;- post %&gt;% 
+  mutate(.chain = as.factor(.chain)) %&gt;% 
+  group_by(.variable, .chain) %&gt;% 
+  mutate(.value = cummean(.value)) %&gt;% 
   ggplot(aes(x = .iteration, y = .value, color = chain)) +
     geom_line(alpha = .5) +
     facet_wrap(~ .variable, scales = &quot;free&quot;) +
@@ -201,10 +204,10 @@ p1 + p2 + plot_layout(guides = &#39;collect&#39;)</code></pre>
   m &lt;- mean(vec)
   hdi &lt;- as.vector(hdi(vec, .width = width))
   df &lt;- enframe(vec)
-
+  
   ggplot(df, aes(vec)) +
     stat_density(geom = &quot;line&quot;, size = 1, color = viridis(1)) +
-    geom_segment(aes(x = hdi[1], xend = hdi[2],
+    geom_segment(aes(x = hdi[1], xend = hdi[2], 
                      y = 0, yend = 0),
                  color = viridis(1)) +
     geom_point(aes(y=0, x = m), size = 2, shape = 1, color = viridis(1)) +
@@ -213,31 +216,31 @@ p1 + p2 + plot_layout(guides = &#39;collect&#39;)</code></pre>
           panel.grid.major.x = element_line(color = &quot;white&quot;))
 }
 
-post &lt;- gather_draws(fit, alpha[group], gamma[group]) %&gt;%
-  ungroup() %&gt;%
+post &lt;- gather_draws(fit, alpha[group], gamma[group]) %&gt;% 
+  ungroup() %&gt;% 
   mutate(group = str_c(&quot;Group &quot;, group))
 
-p1 &lt;- post %&gt;%
-  filter(.variable == &quot;alpha&quot;, group == &quot;Group 1&quot;) %&gt;%
-  pull(.value) %&gt;%
+p1 &lt;- post %&gt;% 
+  filter(.variable == &quot;alpha&quot;, group == &quot;Group 1&quot;) %&gt;% 
+  pull(.value) %&gt;% 
   plot_posterior_moment() +
     scale_x_continuous(name = NULL, breaks = seq(4.9, 6.3, .1), limits = c(4.9, 6.3)) +
     labs(title = expression(mu[comedy]))
-p2 &lt;- post %&gt;%
-  filter(.variable == &quot;alpha&quot;, group == &quot;Group 2&quot;) %&gt;%
-  pull(.value) %&gt;%
+p2 &lt;- post %&gt;% 
+  filter(.variable == &quot;alpha&quot;, group == &quot;Group 2&quot;) %&gt;% 
+  pull(.value) %&gt;% 
   plot_posterior_moment() +
     scale_x_continuous(name = NULL, breaks = seq(4.9, 6.3, .1), limits = c(4.9, 6.3)) +
     labs(title = expression(mu[action]))
-p3 &lt;- post %&gt;%
-  filter(.variable == &quot;gamma&quot;, group == &quot;Group 1&quot;) %&gt;%
-  pull(.value) %&gt;%
+p3 &lt;- post %&gt;% 
+  filter(.variable == &quot;gamma&quot;, group == &quot;Group 1&quot;) %&gt;% 
+  pull(.value) %&gt;% 
   plot_posterior_moment() +
   scale_x_continuous(name = NULL, breaks = seq(1, 2, by = .1), limits = c(1,2)) +
     labs(title = expression(sigma[comedy]))
-p4 &lt;- post %&gt;%
-  filter(.variable == &quot;gamma&quot;, group == &quot;Group 2&quot;) %&gt;%
-  pull(.value) %&gt;%
+p4 &lt;- post %&gt;% 
+  filter(.variable == &quot;gamma&quot;, group == &quot;Group 2&quot;) %&gt;% 
+  pull(.value) %&gt;% 
   plot_posterior_moment() +
   scale_x_continuous(name = NULL, breaks = seq(1, 2, by = .1), limits = c(1,2)) +
     labs(title = expression(sigma[action]))

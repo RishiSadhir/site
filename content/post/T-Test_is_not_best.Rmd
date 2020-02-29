@@ -11,7 +11,7 @@ In this post, we explore the task of comparing groups of measurements. We've all
 
 # Preliminaries
 
-In this post, we'll encode Kruschke's methods in STAN and use it to compare action move ratings versus comedy movie ratings. The code shown below is also available in python [here](https://github.com/RishiSadhir/T-Test-is-not-BEST/blob/master/T-Test%20is%20not%20best.ipynb) along with the supporting CSV. We make liberal use of the tidyverse grouping of R packages to carry out our analysis. Those unfamiliar can reference the excellent [R4DS](https://r4ds.had.co.nz/) book by Hadley Wickham.
+In this post, we'll encode Kruschke's methods in STAN and use it to compare action move ratings versus comedy movie ratings. The code shown below is also available in python [here](https://github.com/RishiSadhir/T-Test-is-not-BEST/blob/master/T-Test%20is%20not%20best.ipynb) along with the supporting CSV. We make liberal use of the tidyverse grouping of R packages to carry out our analysis. Those unfamiliar can reference the excellent [R4DS](https://r4ds.had.co.nz/) book by Hadley Wickham. 
 
 
 ```{r message=FALSE, warning=FALSE}
@@ -30,6 +30,8 @@ theme_minimal() %+replace%
         plot.background = element_rect(color = "transparent", fill = "grey90")) %>% 
   theme_set()
 ```
+
+This post is targeted at folks who already have an understanding of bayesian statistics. Throughout, I'll use [Stan](https://mc-stan.org/) as my primary modeling tool. There is a lot you can do to make your Stan code more efficient but this post shoots for interpretability. To learn more about Bayesian Statistics and Stan, start with my blog post [here](https://www.rishisadhir.com/2020/02/08/intro-to-bayes-part-1/). I also highly recommend Richard's book [Statistical Rethinking](https://xcelab.net/rm/statistical-rethinking/) and the wonderful documentation on the Stan website.
 
 # Comedy or Action?
 

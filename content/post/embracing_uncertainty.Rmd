@@ -10,6 +10,7 @@ tags: ["R", "Bayesian", "Statistics"]
 One of my favorite things about being a data scientist is running experiments. Often, data science teams will run a lot of repeated and related experiments about the same general thing - Usually, because we only have some short window to learn something or some other constraints. We run experiments to recover an *effect size* for something we care about. When the experiment is over, we have typically measured an effect size with some *uncertainty* (like a standard error) about this measurement. The data and results repeated experiments generate are probably applicable to each other, but how do we take advantage of that?
 
 When you repeat studies, there are three ways of looking at it.
+
 1. Each of the studies are perfectly identical to each other.
 2. The studies are so different that the results of any one study provide no information about the results of any other.
 3. There is exchangeability between studies though we don’t know exactly how much.
@@ -585,13 +586,9 @@ Further advice for aspiring data scientists:
 
 # References
 
-[1] Statistical rethinking by Richard McElreath is a wonderful introduction to bayesian statistics.
+[1] This write-up was inspired by this [blog post](https://vuorre.netlify.com/post/2016/09/29/meta-analysis-is-a-special-case-of-bayesian-multilevel-modeling/) by Matti Vuorre.
 
-[2] This write-up was inspired by this blog post by Matti Vuorre.
+[2] Many thanks to [A. Solomon Kurz](https://solomonkurz.netlify.com/post/bayesian-meta-analysis/) who painstakingly transcribed the studies data set in his analysis of this data.
 
-[3] Many thanks to A. Solomon Kurz who painstakingly transcribed the studies data set in his analysis of this data.
-
-[4] This blog post made heavy use of the tidyverse, an opinionated set of data science tools. Learn more about it here.
-
-[5] It can be a bit intimidating to jump straight in to writing stan code. brms offers an incredibly simple and surprisingly flexible high level interface that compiles down to stan with a whole lot of extra helper functionality. You get the ease of an API with the power of the posterior - I highly recommend it!
+[3] It can be a bit intimidating to jump straight in to writing stan code. brms offers an incredibly simple and surprisingly flexible high level interface that compiles down to stan with a whole lot of extra helper functionality. You get the ease of an API with the power of the posterior - I highly recommend it!
 

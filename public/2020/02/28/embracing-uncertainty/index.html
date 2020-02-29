@@ -76,10 +76,12 @@
 
 
 <p>One of my favorite things about being a data scientist is running experiments. Often, data science teams will run a lot of repeated and related experiments about the same general thing - Usually, because we only have some short window to learn something or some other constraints. We run experiments to recover an <em>effect size</em> for something we care about. When the experiment is over, we have typically measured an effect size with some <em>uncertainty</em> (like a standard error) about this measurement. The data and results repeated experiments generate are probably applicable to each other, but how do we take advantage of that?</p>
-<p>When you repeat studies, there are three ways of looking at it.
-1. Each of the studies are perfectly identical to each other.
-2. The studies are so different that the results of any one study provide no information about the results of any other.
-3. There is exchangeability between studies though we don’t know exactly how much.</p>
+<p>When you repeat studies, there are three ways of looking at it.</p>
+<ol style="list-style-type: decimal">
+<li>Each of the studies are perfectly identical to each other.</li>
+<li>The studies are so different that the results of any one study provide no information about the results of any other.</li>
+<li>There is exchangeability between studies though we don’t know exactly how much.</li>
+</ol>
 <p>This third possibility takes the middle road between 1 and 2 and is the pragmatic approach that we’ll talk about in this blog post. We’ll use Bayesian hierarchical regressions to perform a meta analysis on a group of studies to determine what the true underlying effect was that those studies were trying to measure.</p>
 <div id="preliminaries" class="section level1">
 <h1>Preliminaries</h1>
@@ -251,11 +253,11 @@ fit_meta_pooled</code></pre>
 ## post-warmup draws per chain=1000, total post-warmup draws=4000.
 ## 
 ##        mean se_mean   sd  2.5%   25%   50%   75% 97.5% n_eff Rhat
-## alpha  0.39    0.00 0.03  0.32  0.36  0.39  0.41  0.45  3222    1
-## sigma  0.37    0.00 0.03  0.32  0.35  0.37  0.38  0.42  3202    1
-## lp__  55.02    0.02 0.98 52.45 54.65 55.33 55.71 55.98  1794    1
+## alpha  0.38    0.00 0.04  0.31  0.36  0.39  0.41  0.45  3584    1
+## sigma  0.37    0.00 0.03  0.32  0.35  0.37  0.39  0.42  3049    1
+## lp__  54.97    0.02 1.03 52.22 54.60 55.27 55.69 55.97  1784    1
 ## 
-## Samples were drawn using NUTS(diag_e) at Fri Feb 28 22:13:16 2020.
+## Samples were drawn using NUTS(diag_e) at Fri Feb 28 22:27:23 2020.
 ## For each parameter, n_eff is a crude measure of effective sample size,
 ## and Rhat is the potential scale reduction factor on split chains (at 
 ## convergence, Rhat=1).</code></pre>
@@ -614,8 +616,8 @@ tibble(&quot;sigma study&quot; = post_sigmas$sigma_a,
 <li>As scientists, we should consider mastering broadly applicable toolsets and avoid using highly use-case specific tools. In particular, I advocate for adding hierarchical regressions to your toolbox by showing how meta-analysis, anova, and measurement-error models are just special cases of hierarchical regression.</li>
 </ol>
 <div class="figure">
-<img src="../../../../static/post/embracing_uncertainty_files/figure-html/flow.png" alt="png" />
-<p class="caption">png</p>
+<img src="../../../../post/embracing_uncertainty_files/figure-html/flow.png" alt="Flowhcart of madness" />
+<p class="caption">Flowhcart of madness</p>
 </div>
 <blockquote>
 <p>The way these different methods are presented (regression, meta-analysis, ANOVA, …), it is quite easy for a beginner, like me, to lose sight of the forest for the trees. I also feel that this is a general experience for students of applied statistics: Every experiment, situation, and question results in a different statistical method (or worse: “Which test should I use?”), and the student doesn’t see how the methods relate to each other. So I think focusing on the (regression) model is key, but often overlooked in favor of this sort of decision tree model of choosing statistical methods - McElreath, 2016, p.2</p>
@@ -628,11 +630,9 @@ tibble(&quot;sigma study&quot; = post_sigmas$sigma_a,
 </div>
 <div id="references" class="section level1">
 <h1>References</h1>
-<p>[1] Statistical rethinking by Richard McElreath is a wonderful introduction to bayesian statistics.</p>
-<p>[2] This write-up was inspired by this blog post by Matti Vuorre.</p>
-<p>[3] Many thanks to A. Solomon Kurz who painstakingly transcribed the studies data set in his analysis of this data.</p>
-<p>[4] This blog post made heavy use of the tidyverse, an opinionated set of data science tools. Learn more about it here.</p>
-<p>[5] It can be a bit intimidating to jump straight in to writing stan code. brms offers an incredibly simple and surprisingly flexible high level interface that compiles down to stan with a whole lot of extra helper functionality. You get the ease of an API with the power of the posterior - I highly recommend it!</p>
+<p>[1] This write-up was inspired by this <a href="https://vuorre.netlify.com/post/2016/09/29/meta-analysis-is-a-special-case-of-bayesian-multilevel-modeling/">blog post</a> by Matti Vuorre.</p>
+<p>[2] Many thanks to <a href="https://solomonkurz.netlify.com/post/bayesian-meta-analysis/">A. Solomon Kurz</a> who painstakingly transcribed the studies data set in his analysis of this data.</p>
+<p>[3] It can be a bit intimidating to jump straight in to writing stan code. brms offers an incredibly simple and surprisingly flexible high level interface that compiles down to stan with a whole lot of extra helper functionality. You get the ease of an API with the power of the posterior - I highly recommend it!</p>
 </div>
 
     </div>
