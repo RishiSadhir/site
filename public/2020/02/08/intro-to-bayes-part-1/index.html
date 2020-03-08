@@ -3,14 +3,14 @@
   <head>
     <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Hugo 0.62.1" />
+<meta name="generator" content="Hugo 0.66.0" />
 
 
 <title>Intro to Bayes: Part 1 - Rishi Sadhir&#39;s personal blog</title>
 <meta property="og:title" content="Intro to Bayes: Part 1 - Rishi Sadhir&#39;s personal blog">
 
 
-  <link href='../../../../favicon.ico' rel='icon' type='image/x-icon'/>
+  <link href='/favicon.ico' rel='icon' type='image/x-icon'/>
 
 
 
@@ -27,8 +27,8 @@
 
 
 
-<link rel="stylesheet" href="../../../../css/fonts.css" media="all">
-<link rel="stylesheet" href="../../../../css/main.css" media="all">
+<link rel="stylesheet" href="/css/fonts.css" media="all">
+<link rel="stylesheet" href="/css/main.css" media="all">
 
 
 
@@ -37,8 +37,8 @@
     <div class="wrapper">
       <header class="header">
         <nav class="nav">
-  <a href="../../../../" class="nav-logo">
-    <img src="../../../../images/logo.png"
+  <a href="/" class="nav-logo">
+    <img src="/images/logo.png"
          width="50"
          height="50"
          alt="Rishi Sadhir">
@@ -46,7 +46,7 @@
 
   <ul class="nav-links">
     
-    <li><a href="../../../../about/">About</a></li>
+    <li><a href="/about/">About</a></li>
     
     <li><a href="https://github.com/RishiSadhir">GitHub</a></li>
     
@@ -62,7 +62,7 @@
 
   <article class="article">
     
-    <span class="article-duration">8 min read</span>
+    <span class="article-duration">9 min read</span>
     
 
     <h1 class="article-title">Intro to Bayes: Part 1</h1>
@@ -72,21 +72,21 @@
     
 
     <div class="article-content">
-      <p>In this blog post, I will give you a relatively nontechnical introduction to Bayesian statistics. Bayesian methods are getting more and more popular and there are many tools out there to apply it. In this example, we'll use a computationally simple example to pin down concepts and jargon. In a follow-up post, I will introduce the basics of Markov chain Monte Carlo (MCMC) and the Metropolis–Hastings algorithm to solve more complex problems.</p>
+      <p>In this blog post, I will give you a relatively nontechnical introduction to Bayesian statistics. Bayesian methods are getting more and more popular and there are many tools out there to apply it. In this example, we&rsquo;ll use a computationally simple example to pin down concepts and jargon. In a follow-up post, I will introduce the basics of Markov chain Monte Carlo (MCMC) and the Metropolis–Hastings algorithm to solve more complex problems.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">import</span> numpy <span style="color:#f92672">as</span> np
 <span style="color:#f92672">import</span> scipy.stats <span style="color:#f92672">as</span> stats
 <span style="color:#f92672">import</span> matplotlib.pyplot <span style="color:#f92672">as</span> plt
-plt<span style="color:#f92672">.</span>style<span style="color:#f92672">.</span>use(<span style="color:#e6db74"></span><span style="color:#e6db74">&#39;</span><span style="color:#e6db74">fivethirtyeight</span><span style="color:#e6db74">&#39;</span>)
+plt<span style="color:#f92672">.</span>style<span style="color:#f92672">.</span>use(<span style="color:#e6db74">&#39;fivethirtyeight&#39;</span>)
 </code></pre></div><h3 id="bayesian-statistics">Bayesian Statistics</h3>
 <p>Many of us were trained using a frequentist approach to statistics where parameters are treated as fixed but unknown quantities. In this paradigm, we estimate parameters using samples from a population. New samples give us new estimates, hopefully centered around the true value. The distribution of these different estimates is called the sampling distribution, and it quantifies the uncertainty of our estimate. Importantly, though, the parameter itself is still considered fixed.</p>
 <p>The Bayesian approach is a different way of thinking about statistics. Parameters are treated as random variables and described with probability distributions. The distribtion tells us our belief about specific values of the parameters.</p>
-<p>To introduce these concepts and build intuition, we'll work through a cannonical coin toss example. We'll use theta to denote the probability of getting heads, 1, and (1-theta) will refer to the probability of getting tails, 0.</p>
+<p>To introduce these concepts and build intuition, we&rsquo;ll work through a cannonical coin toss example. We&rsquo;ll use theta to denote the probability of getting heads, 1, and (1-theta) will refer to the probability of getting tails, 0.</p>
 <p>So, lets formalize the first step in our analysis. Lets formally define the model we are interested in fitting. For us, that is pretty simple:</p>
 <p>\begin{align}
 is\_head_i \sim Bernoulli(\theta) \\\<br>
 \theta \sim Beta(20, 20)
 \end{align}</p>
-<p>All we are saying here is that each coin flip is a bernoulli draw where the probability of getting heads is defined by the value of theta. To complete our analysis, we'll need to define a prior for theta, condition the model on some data, then examine the posterior distribution.</p>
+<p>All we are saying here is that each coin flip is a bernoulli draw where the probability of getting heads is defined by the value of theta. To complete our analysis, we&rsquo;ll need to define a prior for theta, condition the model on some data, then examine the posterior distribution.</p>
 <h3 id="prior-distributions">Prior distributions</h3>
 <p>The second line of our model is the prior distribution we chose for the parameter theta. A prior distribution is just a mathematical expression that defines our belief about the distribution of the parameter.</p>
 <p>The prior can be based on what we know about the physical world, assumptions about our model, or previous experience. Common sense would suggest that the probability of heads is closer to 0.5, and I could express this belief mathematically by specifying parameters of my beta distribution. Figure 1 below shows a beta distribution with parameters 20 and 20 and compares it against a complete flat prior with parameters 1 and 1.</p>
@@ -100,14 +100,14 @@ density <span style="color:#f92672">=</span> stats<span style="color:#f92672">.<
 y_informative <span style="color:#f92672">=</span> density(x) <span style="color:#f92672">/</span> density(x)<span style="color:#f92672">.</span>sum(axis <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>, keepdims <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>)
 
 fig, ax <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>subplots(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">14</span>,<span style="color:#ae81ff">3</span>))
-ax<span style="color:#f92672">.</span>plot(x, y, label<span style="color:#f92672">=</span><span style="color:#e6db74"></span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">Beta(1, 1)</span><span style="color:#e6db74">&#34;</span>)
-ax<span style="color:#f92672">.</span>plot(x, y_informative, label<span style="color:#f92672">=</span><span style="color:#e6db74"></span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">Beta(30, 30)</span><span style="color:#e6db74">&#34;</span>)
-ax<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74"></span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">Figure 1: Informative Beta Distribution</span><span style="color:#e6db74">&#34;</span>)
-ax<span style="color:#f92672">.</span>set_xlabel(<span style="color:#e6db74"></span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">$</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">theta$</span><span style="color:#e6db74">&#34;</span>)
+ax<span style="color:#f92672">.</span>plot(x, y, label<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Beta(1, 1)&#34;</span>)
+ax<span style="color:#f92672">.</span>plot(x, y_informative, label<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;Beta(30, 30)&#34;</span>)
+ax<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Figure 1: Informative Beta Distribution&#34;</span>)
+ax<span style="color:#f92672">.</span>set_xlabel(<span style="color:#e6db74">&#34;$</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">theta$&#34;</span>)
 ax<span style="color:#f92672">.</span>legend()
 plt<span style="color:#f92672">.</span>viridis()
 plt<span style="color:#f92672">.</span>show()
-</code></pre></div><p><img src="../../../../post/intro_bayes_1/figure-html/output_5_0.png" alt="png"></p>
+</code></pre></div><p><img src="/post/intro_bayes_1/figure-html/output_5_0.png" alt="png"></p>
 <p>A beta(1,1) distribution is called uninformative because all values of the parameter have equal probability. Figure 1 is called an informative prior because all values of the parameter do not have equal probability. Setting priors may seem tricky at first, but in practice there is almost <em>always</em> a prior.</p>
 <p>Even non-Bayesian procedures are improved by introducing devices that resemble priors, because these devices reduce overfitting. Overfitting here just means learning too much from a sample. Statisticians have introduced procedures for regularizing inference which is in fact mathematically equivalent to using prior information that down-weights extreme parameter values. Penalized likelihood is the best known example. This is equivalent to a prior distribution that is less than perfectly flat. We can always do better than to use a flat prior. Any prior that is slightly less flat will be an improvement.</p>
 <p>Of course if the prior is too concentrated in the wrong place, then it will hurt inference. But there is a universe of prior distributions that beat the flat prior implied by classical statistical methods. And that is why non-Bayesian statisticians use regularizing procedures that achieve the same advantages as prior information.</p>
@@ -131,13 +131,13 @@ y_pdf <span style="color:#f92672">=</span> y_pdf <span style="color:#f92672">/</
 
 <span style="color:#75715e"># Overlay densitites</span>
 fig, ax <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>subplots(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">14</span>,<span style="color:#ae81ff">3</span>))n
-ax<span style="color:#f92672">.</span>plot(x_pdf, y_prior, label <span style="color:#f92672">=</span> <span style="color:#e6db74"></span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">Normalized Prior: Beta(20, 20)</span><span style="color:#e6db74">&#34;</span>)
-ax<span style="color:#f92672">.</span>plot(x_pdf, y_pdf, label <span style="color:#f92672">=</span> <span style="color:#e6db74"></span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">Normalized Likelihood: Binomial(9, 3, $</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">theta$)</span><span style="color:#e6db74">&#34;</span>)
-ax<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74"></span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">Figure 2: Likelihood of seeing our data</span><span style="color:#e6db74">&#34;</span>)
-ax<span style="color:#f92672">.</span>set_xlabel(<span style="color:#e6db74"></span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">$</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">theta$</span><span style="color:#e6db74">&#34;</span>)
-ax<span style="color:#f92672">.</span>legend(loc <span style="color:#f92672">=</span> <span style="color:#e6db74"></span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">upper left</span><span style="color:#e6db74">&#34;</span>)
+ax<span style="color:#f92672">.</span>plot(x_pdf, y_prior, label <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Normalized Prior: Beta(20, 20)&#34;</span>)
+ax<span style="color:#f92672">.</span>plot(x_pdf, y_pdf, label <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Normalized Likelihood: Binomial(9, 3, $</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">theta$)&#34;</span>)
+ax<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Figure 2: Likelihood of seeing our data&#34;</span>)
+ax<span style="color:#f92672">.</span>set_xlabel(<span style="color:#e6db74">&#34;$</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">theta$&#34;</span>)
+ax<span style="color:#f92672">.</span>legend(loc <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;upper left&#34;</span>)
 plt<span style="color:#f92672">.</span>show()
-</code></pre></div><p><img src="../../../../post/intro_bayes_1/figure-html/output_10_0.png" alt="png"></p>
+</code></pre></div><p><img src="/post/intro_bayes_1/figure-html/output_10_0.png" alt="png"></p>
 <h3 id="posterior-distributions">Posterior distributions</h3>
 <p>The fourth step in our analysis is to calculate a posterior distribution. This distribution represents a reallocation of our beleif away from the prior and towards what we saw in our coin flippling experiment.</p>
 <p>In really simple cases, we can actually compute a posterior distribution by multiplying the prior distribution and the likelihood function. Technically, the posterior is proportional to the product of the prior and the likelihood, but let’s keep things simple for now.</p>
@@ -161,25 +161,25 @@ y_posterior_norm <span style="color:#f92672">=</span> y_posterior <span style="c
 
 <span style="color:#75715e"># Overlay densitites</span>
 fig, ax <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>subplots(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">14</span>,<span style="color:#ae81ff">3</span>))
-ax<span style="color:#f92672">.</span>plot(x, y_prior_norm, label <span style="color:#f92672">=</span> <span style="color:#e6db74"></span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">Normalized Prior: Beta(20, 20)</span><span style="color:#e6db74">&#34;</span>)
-ax<span style="color:#f92672">.</span>plot(x, y_likelihood_norm, label <span style="color:#f92672">=</span> <span style="color:#e6db74"></span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">Normalized Likelihood: Binomial(9, 3, $</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">theta$)</span><span style="color:#e6db74">&#34;</span>)
-ax<span style="color:#f92672">.</span>plot(x, y_posterior_norm, label <span style="color:#f92672">=</span> <span style="color:#e6db74"></span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">Conjugate Posterior: Beta(30+3, 40+6)</span><span style="color:#e6db74">&#34;</span>)
-ax<span style="color:#f92672">.</span>set_xlabel(<span style="color:#e6db74"></span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">$</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">theta$</span><span style="color:#e6db74">&#34;</span>)
-ax<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74"></span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">Figure 3: The Posterior Distribution, the Likelihood Function, and the Prior Distribution</span><span style="color:#e6db74">&#34;</span>)
+ax<span style="color:#f92672">.</span>plot(x, y_prior_norm, label <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Normalized Prior: Beta(20, 20)&#34;</span>)
+ax<span style="color:#f92672">.</span>plot(x, y_likelihood_norm, label <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Normalized Likelihood: Binomial(9, 3, $</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">theta$)&#34;</span>)
+ax<span style="color:#f92672">.</span>plot(x, y_posterior_norm, label <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Conjugate Posterior: Beta(30+3, 40+6)&#34;</span>)
+ax<span style="color:#f92672">.</span>set_xlabel(<span style="color:#e6db74">&#34;$</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">theta$&#34;</span>)
+ax<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Figure 3: The Posterior Distribution, the Likelihood Function, and the Prior Distribution&#34;</span>)
 plt<span style="color:#f92672">.</span>legend()
 plt<span style="color:#f92672">.</span>show()
-</code></pre></div><p><img src="../../../../post/intro_bayes_1/figure-html/output_12_0.png" alt="png"></p>
+</code></pre></div><p><img src="/post/intro_bayes_1/figure-html/output_12_0.png" alt="png"></p>
 <p>Notice that the posterior closely resembles the prior distribution. This is because we used an informative prior and a relatively small sample size. If we had used a completely uninformative prior like Beta(1,1), we would see the likelihood completely dominate the data. In practice, this means that we can reduce the standard deviation of the posterior distribution using smaller sample sizes when we use more informative priors. But a similar reduction in the standard deviation may require a larger sample size when we use a weak or uninformative prior.</p>
 <h3 id="using-the-posterior">Using the posterior</h3>
 <p>After we calculate the posterior distribution, we can calculate the mean or median of the posterior distribution, a 95% equal tail credible interval, the probability that theta lies within an interval, and many other statistics.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#e6db74"></span><span style="color:#e6db74">&#34;&#34;&#34;</span><span style="color:#e6db74">
-</span><span style="color:#e6db74"></span><span style="color:#e6db74">This code was taken form the PyMC library https://github.com/pymc-devs/pymc</span><span style="color:#e6db74">
-</span><span style="color:#e6db74"></span><span style="color:#e6db74">&#34;&#34;&#34;</span>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#e6db74">&#34;&#34;&#34;
+</span><span style="color:#e6db74">This code was taken form the PyMC library https://github.com/pymc-devs/pymc
+</span><span style="color:#e6db74">&#34;&#34;&#34;</span>
 
 <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">calc_min_interval</span>(x, alpha):
-    <span style="color:#e6db74"></span><span style="color:#e6db74">&#34;&#34;&#34;</span><span style="color:#e6db74">Internal method to determine the minimum interval of a given width</span><span style="color:#e6db74">
-</span><span style="color:#e6db74"></span><span style="color:#e6db74">    Assumes that x is sorted numpy array.</span><span style="color:#e6db74">
-</span><span style="color:#e6db74"></span><span style="color:#e6db74">    </span><span style="color:#e6db74">&#34;&#34;&#34;</span>
+    <span style="color:#e6db74">&#34;&#34;&#34;Internal method to determine the minimum interval of a given width
+</span><span style="color:#e6db74">    Assumes that x is sorted numpy array.
+</span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
     n <span style="color:#f92672">=</span> len(x)
     cred_mass <span style="color:#f92672">=</span> <span style="color:#ae81ff">1.0</span><span style="color:#f92672">-</span>alpha
 
@@ -188,7 +188,7 @@ plt<span style="color:#f92672">.</span>show()
     interval_width <span style="color:#f92672">=</span> x[interval_idx_inc:] <span style="color:#f92672">-</span> x[:n_intervals]
 
     <span style="color:#66d9ef">if</span> len(interval_width) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span>:
-        <span style="color:#66d9ef">raise</span> <span style="color:#a6e22e">ValueError</span>(<span style="color:#e6db74"></span><span style="color:#e6db74">&#39;</span><span style="color:#e6db74">Too few elements for interval calculation</span><span style="color:#e6db74">&#39;</span>)
+        <span style="color:#66d9ef">raise</span> <span style="color:#a6e22e">ValueError</span>(<span style="color:#e6db74">&#39;Too few elements for interval calculation&#39;</span>)
 
     min_idx <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>argmin(interval_width)
     hdi_min <span style="color:#f92672">=</span> x[min_idx]
@@ -197,14 +197,14 @@ plt<span style="color:#f92672">.</span>show()
 
 
 <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">hpd</span>(x, alpha<span style="color:#f92672">=</span><span style="color:#ae81ff">0.05</span>):
-    <span style="color:#e6db74"></span><span style="color:#e6db74">&#34;&#34;&#34;</span><span style="color:#e6db74">Calculate highest posterior density (HPD) of array for given alpha. </span><span style="color:#e6db74">
-</span><span style="color:#e6db74"></span><span style="color:#e6db74">    The HPD is the minimum width Bayesian credible interval (BCI).</span><span style="color:#e6db74">
-</span><span style="color:#e6db74"></span><span style="color:#e6db74">    :Arguments:</span><span style="color:#e6db74">
-</span><span style="color:#e6db74"></span><span style="color:#e6db74">        x : Numpy array</span><span style="color:#e6db74">
-</span><span style="color:#e6db74"></span><span style="color:#e6db74">        An array containing MCMC samples</span><span style="color:#e6db74">
-</span><span style="color:#e6db74"></span><span style="color:#e6db74">        alpha : float</span><span style="color:#e6db74">
-</span><span style="color:#e6db74"></span><span style="color:#e6db74">        Desired probability of type I error (defaults to 0.05)</span><span style="color:#e6db74">
-</span><span style="color:#e6db74"></span><span style="color:#e6db74">    </span><span style="color:#e6db74">&#34;&#34;&#34;</span>
+    <span style="color:#e6db74">&#34;&#34;&#34;Calculate highest posterior density (HPD) of array for given alpha. 
+</span><span style="color:#e6db74">    The HPD is the minimum width Bayesian credible interval (BCI).
+</span><span style="color:#e6db74">    :Arguments:
+</span><span style="color:#e6db74">        x : Numpy array
+</span><span style="color:#e6db74">        An array containing MCMC samples
+</span><span style="color:#e6db74">        alpha : float
+</span><span style="color:#e6db74">        Desired probability of type I error (defaults to 0.05)
+</span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
     <span style="color:#75715e"># Make a copy of trace</span>
     x <span style="color:#f92672">=</span> x<span style="color:#f92672">.</span>copy()
     <span style="color:#75715e"># For multivariate node</span>
@@ -238,23 +238,23 @@ post_lims <span style="color:#f92672">=</span> hpd(posterior_samples)
 post_mean <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>mean(posterior_samples)
 
 fig, ax <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>subplots(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">14</span>,<span style="color:#ae81ff">3</span>))
-ax<span style="color:#f92672">.</span>axvline(post_lims[<span style="color:#ae81ff">0</span>], color <span style="color:#f92672">=</span> <span style="color:#e6db74"></span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">black</span><span style="color:#e6db74">&#34;</span>, linestyle<span style="color:#f92672">=</span><span style="color:#e6db74"></span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">--</span><span style="color:#e6db74">&#34;</span>, lw<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>, zorder<span style="color:#f92672">=</span><span style="color:#ae81ff">5</span>)
-ax<span style="color:#f92672">.</span>axvline(post_lims[<span style="color:#ae81ff">1</span>], color <span style="color:#f92672">=</span> <span style="color:#e6db74"></span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">black</span><span style="color:#e6db74">&#34;</span>, linestyle<span style="color:#f92672">=</span><span style="color:#e6db74"></span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">--</span><span style="color:#e6db74">&#34;</span>, lw<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>, zorder<span style="color:#f92672">=</span><span style="color:#ae81ff">5</span>, 
-           label<span style="color:#f92672">=</span>f<span style="color:#e6db74"></span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">95</span><span style="color:#e6db74">%</span><span style="color:#e6db74"> HDI: [{round(post_lims[0],2)}, {round(post_lims[1],2)}]</span><span style="color:#e6db74">&#34;</span>)
-ax<span style="color:#f92672">.</span>axvline(post_mean, color <span style="color:#f92672">=</span> <span style="color:#e6db74"></span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">black</span><span style="color:#e6db74">&#34;</span>, linestyle<span style="color:#f92672">=</span><span style="color:#e6db74"></span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">-</span><span style="color:#e6db74">&#34;</span>, lw<span style="color:#f92672">=</span><span style="color:#ae81ff">3</span>, zorder<span style="color:#f92672">=</span><span style="color:#ae81ff">5</span>, 
-           label<span style="color:#f92672">=</span>f<span style="color:#e6db74"></span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">Posterior Mean: {round(post_mean,2)}</span><span style="color:#e6db74">&#34;</span>)
+ax<span style="color:#f92672">.</span>axvline(post_lims[<span style="color:#ae81ff">0</span>], color <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;black&#34;</span>, linestyle<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;--&#34;</span>, lw<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>, zorder<span style="color:#f92672">=</span><span style="color:#ae81ff">5</span>)
+ax<span style="color:#f92672">.</span>axvline(post_lims[<span style="color:#ae81ff">1</span>], color <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;black&#34;</span>, linestyle<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;--&#34;</span>, lw<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>, zorder<span style="color:#f92672">=</span><span style="color:#ae81ff">5</span>, 
+           label<span style="color:#f92672">=</span>f<span style="color:#e6db74">&#34;95% HDI: [{round(post_lims[0],2)}, {round(post_lims[1],2)}]&#34;</span>)
+ax<span style="color:#f92672">.</span>axvline(post_mean, color <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;black&#34;</span>, linestyle<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;-&#34;</span>, lw<span style="color:#f92672">=</span><span style="color:#ae81ff">3</span>, zorder<span style="color:#f92672">=</span><span style="color:#ae81ff">5</span>, 
+           label<span style="color:#f92672">=</span>f<span style="color:#e6db74">&#34;Posterior Mean: {round(post_mean,2)}&#34;</span>)
 ax<span style="color:#f92672">.</span>hist(posterior_samples, bins <span style="color:#f92672">=</span> <span style="color:#ae81ff">35</span>, zorder<span style="color:#f92672">=</span><span style="color:#ae81ff">10</span>, alpha <span style="color:#f92672">=</span> <span style="color:#f92672">.</span><span style="color:#ae81ff">9</span>)
 ax<span style="color:#f92672">.</span>set_xticks(np<span style="color:#f92672">.</span>linspace(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">11</span>))
 ax<span style="color:#f92672">.</span>get_yaxis()<span style="color:#f92672">.</span>set_visible(False)
-ax<span style="color:#f92672">.</span>set_xlabel(<span style="color:#e6db74"></span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">Posterior samples of $</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">theta$</span><span style="color:#e6db74">&#34;</span>)
-ax<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74"></span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">Figure 4: In practice, we work with samples that approximate the posterior </span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>)
+ax<span style="color:#f92672">.</span>set_xlabel(<span style="color:#e6db74">&#34;Posterior samples of $</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">theta$&#34;</span>)
+ax<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Figure 4: In practice, we work with samples that approximate the posterior </span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>)
 plt<span style="color:#f92672">.</span>legend()
 plt<span style="color:#f92672">.</span>show()
-</code></pre></div><p><img src="../../../../post/intro_bayes_1/figure-html/output_14_0.png" alt="png"></p>
+</code></pre></div><p><img src="/post/intro_bayes_1/figure-html/output_14_0.png" alt="png"></p>
 <h3 id="why-use-bayesian-statistics">Why use Bayesian statistics?</h3>
 <p>There are many appealing features of the Bayesian approach to statistics. Perhaps the most appealing feature is that the posterior distribution from a previous study can often serve as the prior distribution for subsequent studies. For example, we might conduct a small pilot study using an uninformative prior distribution and use the posterior distribution from the pilot study as the prior distribution for the main study. This approach would increase the precision of the main study.</p>
 <h3 id="summary">Summary</h3>
-<p>In this post, we focused on the concepts and jargon of Bayesian statistics and worked a simple coin flipping example. In this example, we were able to analytically solve for the posterior distribution's probability density function because the beta distribution is a conjugate prior for the binomial distribution. In most real world problems, we can't do this and instead we rely on numerical optimization methods known as MCMC to explore the parameter space and determine its posterior. Next time, we'll illustrate this by exploring MCMC and the Metropolis–Hastings algorithm.</p>
+<p>In this post, we focused on the concepts and jargon of Bayesian statistics and worked a simple coin flipping example. In this example, we were able to analytically solve for the posterior distribution&rsquo;s probability density function because the beta distribution is a conjugate prior for the binomial distribution. In most real world problems, we can&rsquo;t do this and instead we rely on numerical optimization methods known as MCMC to explore the parameter space and determine its posterior. Next time, we&rsquo;ll illustrate this by exploring MCMC and the Metropolis–Hastings algorithm.</p>
 
     </div>
   </article>
@@ -267,7 +267,7 @@ plt<span style="color:#f92672">.</span>show()
       <footer class="footer">
         <ul class="footer-links">
           <li>
-            <a href="../../../../index.xml" type="application/rss+xml" target="_blank">RSS feed</a>
+            <a href="/index.xml" type="application/rss+xml" target="_blank">RSS feed</a>
           </li>
         </ul>
       </footer>
@@ -289,7 +289,7 @@ plt<span style="color:#f92672">.</span>show()
 
 
     
-<script src="../../../../js/math-code.js"></script>
+<script src="/js/math-code.js"></script>
 <script async src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"></script>
 
 

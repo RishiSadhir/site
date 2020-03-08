@@ -6,10 +6,19 @@
     <description>Recent content in Bayesian on Rishi Sadhir&#39;s personal blog</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 28 Feb 2020 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 08 Mar 2020 00:00:00 +0000</lastBuildDate>
     
 	<atom:link href="/categories/bayesian/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>Intro to Bayes: Part 2</title>
+      <link>/2020/03/08/intro-to-bayes-part-2/</link>
+      <pubDate>Sun, 08 Mar 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/2020/03/08/intro-to-bayes-part-2/</guid>
+      <description>In this post, we&amp;rsquo;ll continue to use the coin flip example from part 1. Recall that we are interested in the posterior distribution of the parameter θ, which is the probability that a coin toss results in “heads”. Our prior distribution is an uninformative beta distribution with parameters 1 and 1. We also used a binomial likelihood function to estimate how representative a candidate value for θ is to have generated the data we have on hand - 3 observed heads out of 9 tosses.</description>
+    </item>
     
     <item>
       <title>Embracing Uncertainty</title>
@@ -26,7 +35,7 @@
       <pubDate>Sat, 08 Feb 2020 00:00:00 +0000</pubDate>
       
       <guid>/2020/02/08/intro-to-bayes-part-1/</guid>
-      <description>In this blog post, I will give you a relatively nontechnical introduction to Bayesian statistics. Bayesian methods are getting more and more popular and there are many tools out there to apply it. In this example, we&#39;ll use a computationally simple example to pin down concepts and jargon. In a follow-up post, I will introduce the basics of Markov chain Monte Carlo (MCMC) and the Metropolis–Hastings algorithm to solve more complex problems.</description>
+      <description>In this blog post, I will give you a relatively nontechnical introduction to Bayesian statistics. Bayesian methods are getting more and more popular and there are many tools out there to apply it. In this example, we&amp;rsquo;ll use a computationally simple example to pin down concepts and jargon. In a follow-up post, I will introduce the basics of Markov chain Monte Carlo (MCMC) and the Metropolis–Hastings algorithm to solve more complex problems.</description>
     </item>
     
     <item>

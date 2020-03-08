@@ -3,14 +3,14 @@
   <head>
     <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Hugo 0.62.1" />
+<meta name="generator" content="Hugo 0.66.0" />
 
 
 <title>T-Test is not BEST - Rishi Sadhir&#39;s personal blog</title>
 <meta property="og:title" content="T-Test is not BEST - Rishi Sadhir&#39;s personal blog">
 
 
-  <link href='../../../../favicon.ico' rel='icon' type='image/x-icon'/>
+  <link href='/favicon.ico' rel='icon' type='image/x-icon'/>
 
 
 
@@ -27,8 +27,8 @@
 
 
 
-<link rel="stylesheet" href="../../../../css/fonts.css" media="all">
-<link rel="stylesheet" href="../../../../css/main.css" media="all">
+<link rel="stylesheet" href="/css/fonts.css" media="all">
+<link rel="stylesheet" href="/css/main.css" media="all">
 
 
 
@@ -37,8 +37,8 @@
     <div class="wrapper">
       <header class="header">
         <nav class="nav">
-  <a href="../../../../" class="nav-logo">
-    <img src="../../../../images/logo.png"
+  <a href="/" class="nav-logo">
+    <img src="/images/logo.png"
          width="50"
          height="50"
          alt="Rishi Sadhir">
@@ -46,7 +46,7 @@
 
   <ul class="nav-links">
     
-    <li><a href="../../../../about/">About</a></li>
+    <li><a href="/about/">About</a></li>
     
     <li><a href="https://github.com/RishiSadhir">GitHub</a></li>
     
@@ -132,7 +132,7 @@ head(movies_clean)</code></pre>
   scale_x_continuous(breaks = 0:10) +
   scale_fill_manual(values = viridis::inferno(5, alpha = .6)[c(3,4)]) +
   ylab(&quot;&quot;) + xlab(&quot;Rating&quot;) + ggtitle(&quot;Observed ratings by genre&quot;)</code></pre>
-<p><img src="../../../../post/T-Test_is_not_best_files/figure-html/unnamed-chunk-3-1.png" width="480" /></p>
+<p><img src="/post/T-Test_is_not_best_files/figure-html/unnamed-chunk-3-1.png" width="480" /></p>
 <p>Although they look very similar visually, a t-test tells us that they are in fact statistically significantly different with 95% confidence.</p>
 <pre class="r"><code>t.test(filter(movies_clean, genre == &quot;Comedy&quot;)$rating,
        filter(movies_clean, genre == &quot;Action&quot;)$rating) %&gt;% 
@@ -262,7 +262,7 @@ p2 &lt;- post %&gt;%
     theme(panel.grid.major.y = element_line(color = &quot;white&quot;))
 
 p1 + p2 + plot_layout(guides = &#39;collect&#39;)</code></pre>
-<p><img src="../../../../post/T-Test_is_not_best_files/figure-html/unnamed-chunk-7-1.png" width="960" /></p>
+<p><img src="/post/T-Test_is_not_best_files/figure-html/unnamed-chunk-7-1.png" width="960" /></p>
 </div>
 <div id="analysis" class="section level1">
 <h1>Analysis</h1>
@@ -315,7 +315,7 @@ p4 &lt;- post %&gt;%
 p1 + p3 + p2 + p4 +
   plot_annotation(title = &quot;Posterior Moments&quot;,
                   subtitle = &quot;Shown with 95% credibility about the mean&quot;)</code></pre>
-<p><img src="../../../../post/T-Test_is_not_best_files/figure-html/unnamed-chunk-8-1.png" width="960" /></p>
+<p><img src="/post/T-Test_is_not_best_files/figure-html/unnamed-chunk-8-1.png" width="960" /></p>
 <p>We can do fun things with our posterior distributions. In particular, we can calculate the difference between means (also known as a contrast) between two groups and formally analyze the probability of comedy movies getting higher ratings than action movies.</p>
 <pre class="r"><code>post_mudiff &lt;- spread_draws(fit, mu_diff, sigma_diff)
 p1 &lt;- plot_posterior_moment(post_mudiff$mu_diff) +
@@ -330,7 +330,7 @@ p2 &lt;- plot_posterior_moment(post_mudiff$sigma_diff) +
 
 
 p1 + p2</code></pre>
-<p><img src="../../../../post/T-Test_is_not_best_files/figure-html/unnamed-chunk-9-1.png" width="960" /></p>
+<p><img src="/post/T-Test_is_not_best_files/figure-html/unnamed-chunk-9-1.png" width="960" /></p>
 <p>We can use this difference to directly calculate the probability of the mean of comedy ratings being higher than the mean of action ratings to be 99.85%. We also calculate the 95 percent confidence interval of the difference to be between [.16, .75].</p>
 <pre class="r"><code>get_mode &lt;- function(v) {
    uniq &lt;- unique(v)
@@ -358,7 +358,7 @@ hdi &lt;- HDInterval::hdi(post_mudiff$mu_diff)</code></pre>
       <footer class="footer">
         <ul class="footer-links">
           <li>
-            <a href="../../../../index.xml" type="application/rss+xml" target="_blank">RSS feed</a>
+            <a href="/index.xml" type="application/rss+xml" target="_blank">RSS feed</a>
           </li>
         </ul>
       </footer>
@@ -380,7 +380,7 @@ hdi &lt;- HDInterval::hdi(post_mudiff$mu_diff)</code></pre>
 
 
     
-<script src="../../../../js/math-code.js"></script>
+<script src="/js/math-code.js"></script>
 <script async src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"></script>
 
 

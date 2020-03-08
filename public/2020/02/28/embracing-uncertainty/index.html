@@ -3,14 +3,14 @@
   <head>
     <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Hugo 0.62.1" />
+<meta name="generator" content="Hugo 0.66.0" />
 
 
 <title>Embracing Uncertainty - A meta-analysis with bayesian hierarchical regression  - Rishi Sadhir&#39;s personal blog</title>
 <meta property="og:title" content="Embracing Uncertainty - Rishi Sadhir&#39;s personal blog">
 
 
-  <link href='../../../../favicon.ico' rel='icon' type='image/x-icon'/>
+  <link href='/favicon.ico' rel='icon' type='image/x-icon'/>
 
 
 
@@ -27,8 +27,8 @@
 
 
 
-<link rel="stylesheet" href="../../../../css/fonts.css" media="all">
-<link rel="stylesheet" href="../../../../css/main.css" media="all">
+<link rel="stylesheet" href="/css/fonts.css" media="all">
+<link rel="stylesheet" href="/css/main.css" media="all">
 
 
 
@@ -37,8 +37,8 @@
     <div class="wrapper">
       <header class="header">
         <nav class="nav">
-  <a href="../../../../" class="nav-logo">
-    <img src="../../../../images/logo.png"
+  <a href="/" class="nav-logo">
+    <img src="/images/logo.png"
          width="50"
          height="50"
          alt="Rishi Sadhir">
@@ -46,7 +46,7 @@
 
   <ul class="nav-links">
     
-    <li><a href="../../../../about/">About</a></li>
+    <li><a href="/about/">About</a></li>
     
     <li><a href="https://github.com/RishiSadhir">GitHub</a></li>
     
@@ -175,7 +175,7 @@ spank &lt;- readr::read_csv(url) %&gt;%
   theme(axis.ticks.y = element_blank(),
         panel.grid.major.x = element_line(color = &quot;white&quot;, size = 1.5),
         panel.grid.major.y = element_line(color = &quot;white&quot;, size = .5))</code></pre>
-<p><img src="../../../../post/embracing_uncertainty_files/figure-html/unnamed-chunk-4-1.png" width="960" /></p>
+<p><img src="/post/embracing_uncertainty_files/figure-html/unnamed-chunk-4-1.png" width="960" /></p>
 </div>
 <div id="a-simple-model" class="section level1">
 <h1>A simple model</h1>
@@ -273,7 +273,7 @@ post %&gt;%
     scale_color_manual(values = c(&quot;#01596E&quot;, &quot;#620E62&quot;, &quot;#FF960B&quot;, &quot;#84C6D1&quot;)) +
     ggtitle(&quot;Parameter exploration (aka trace plots)&quot;) +
     xlab(&quot;Iteration&quot;) + ylab(&quot;Value&quot;)</code></pre>
-<p><img src="../../../../post/embracing_uncertainty_files/figure-html/unnamed-chunk-8-1.png" width="960" /></p>
+<p><img src="/post/embracing_uncertainty_files/figure-html/unnamed-chunk-8-1.png" width="960" /></p>
 <p>I told stan to explore the space using 4 independent processes that ran in parallel. That is why you see four different colors stacked on top of one another. The exploration shown in the plots above can be stacked on top of one another to form the plots below. These samples allow us to ask very direct questions such as:</p>
 <pre><code>What is the most likely value this parameter takes? 
 In what region are we 95% sure that this parameter&#39;s true value actually lives is?
@@ -317,7 +317,7 @@ p2 &lt;- posterior_density(post$sigma,
                         &quot;Posterior treatment effect sd&quot;, 
                         expression(sigma), include_zero = FALSE)
 p1 + p2</code></pre>
-<p><img src="../../../../post/embracing_uncertainty_files/figure-html/unnamed-chunk-10-1.png" width="960" /></p>
+<p><img src="/post/embracing_uncertainty_files/figure-html/unnamed-chunk-10-1.png" width="960" /></p>
 <p>The graphs above tells us that we are 95% sure the mean and standard deviation of our meta-treatment effect lives in [.31, .45] and [.32, .42] respectively. Of course, 95% percent is a totally arbitrary cutoff but one that many of us are used to by convention. One really cool thing about having a complete description of uncertainty is that we can use it to run the model “backwards” and simulate new studies.</p>
 <pre class="r"><code># Code to simulate a single study
 sim_study &lt;- function() {
@@ -346,7 +346,7 @@ p2 &lt;- ggplot(spank, aes(effect_size)) +
                            breaks = seq(from = -1, to = 1.5, by = .5))
 
 p1 + p2</code></pre>
-<p><img src="../../../../post/embracing_uncertainty_files/figure-html/unnamed-chunk-11-1.png" width="960" /></p>
+<p><img src="/post/embracing_uncertainty_files/figure-html/unnamed-chunk-11-1.png" width="960" /></p>
 </div>
 <div id="a-better-model" class="section level1">
 <h1>A better model</h1>
@@ -367,9 +367,9 @@ p2 &lt;- spank %&gt;%
   xlab(&quot;&quot;) + ylab(&quot;&quot;) + ggtitle(&quot;1/3 of studies used between-\nparticipants designs&quot;)</code></pre>
 <pre><code>## Warning: Ignoring unknown parameters: binwidth, bins, pad</code></pre>
 <pre class="r"><code>p1 + p2</code></pre>
-<p><img src="../../../../post/embracing_uncertainty_files/figure-html/unnamed-chunk-12-1.png" width="960" /></p>
+<p><img src="/post/embracing_uncertainty_files/figure-html/unnamed-chunk-12-1.png" width="960" /></p>
 <p>Visually, this is how we can think about the data generating process.</p>
-<p><img src="../../../../post/embracing_uncertainty_files/figure-html/unnamed-chunk-13-1.png" width="960" /></p>
+<p><img src="/post/embracing_uncertainty_files/figure-html/unnamed-chunk-13-1.png" width="960" /></p>
 <p>The beautiful thing about Bayesian statistics is that we don’t need to be clever about this problem—we can just state the obvious and let Bayes’ theorem do the rest. We translate the graph above in to the following model.</p>
 <p><span class="math display">\[\begin{align}
 effect_{obs, i} &amp;\sim Normal(effect_{true, i}, effect_{se, i}) &amp;\text{Observed effect as a function of true effect and observed se}\\
@@ -468,7 +468,7 @@ tibble(
     facet_wrap(~ key, scales = &quot;free&quot;) +
     scale_y_continuous(NULL, breaks = NULL) +
     ggtitle(&quot;Prior distributions&quot;) + xlab(&quot;&quot;)</code></pre>
-<p><img src="../../../../post/embracing_uncertainty_files/figure-html/unnamed-chunk-16-1.png" width="960" /></p>
+<p><img src="/post/embracing_uncertainty_files/figure-html/unnamed-chunk-16-1.png" width="960" /></p>
 </div>
 <div id="data-analysis" class="section level1">
 <h1>Data Analysis</h1>
@@ -521,7 +521,7 @@ bayesplot::rhat(fit_meta_ppse) %&gt;%
     xlab(&quot;Rhat&quot;) +
     ggtitle(glue::glue(&quot;Rhat values for {length(get_variables(fit_meta_ppse))} parameters&quot;),
                        &quot;Our chains converged to (more or less) the same value indicating valid inference.&quot;)</code></pre>
-<p><img src="../../../../post/embracing_uncertainty_files/figure-html/unnamed-chunk-17-1.png" width="960" /></p>
+<p><img src="/post/embracing_uncertainty_files/figure-html/unnamed-chunk-17-1.png" width="960" /></p>
 <p>By plotting the posterior distribution of our gamma parameter below, we can conclude that study design had a negligible effect on the mean of the true effect. We also show how one can think about Bayesian p-values in the snippet below. The p-value tells us the probability that a parameter is actually greater than 0. To do that with posterior samples is to simply look at the percentage of samples that are greater than 0. Simple, right!</p>
 <pre class="r"><code>post &lt;- spread_draws(fit_meta_ppse, gamma)
 # pvalue = % of samples greater than 0
@@ -531,7 +531,7 @@ posterior_density(post$gamma,
                   sig = 2) +
   ggtitle(&quot;Marginal effect of a \&quot;within\&quot; study design&quot;,
           glue::glue(&quot;We are {round(pvalue)}% sure the effect of a \&quot;within\&quot; design is greater than 0&quot;))</code></pre>
-<p><img src="../../../../post/embracing_uncertainty_files/figure-html/unnamed-chunk-18-1.png" width="960" /></p>
+<p><img src="/post/embracing_uncertainty_files/figure-html/unnamed-chunk-18-1.png" width="960" /></p>
 <p>Interestingly, the first moment of our true effect, moved closer to 0 than before.</p>
 <pre class="r"><code>df &lt;- spread_draws(fit_meta_ppse, alpha_bar) %&gt;% 
   sample_n(4000) %&gt;% 
@@ -555,7 +555,7 @@ df %&gt;%
                        breaks = seq(from = 0, to = .5, by = .1)) +
   geom_vline(xintercept = 0, linetype = 2, color = &quot;#DEDEDE&quot;) +
   ggtitle(&quot;Our second model fit a smaller treatment effect&quot;)</code></pre>
-<p><img src="../../../../post/embracing_uncertainty_files/figure-html/unnamed-chunk-19-1.png" width="960" /></p>
+<p><img src="/post/embracing_uncertainty_files/figure-html/unnamed-chunk-19-1.png" width="960" /></p>
 <p>Capturing a truer version of the data generating process made us a bit more skeptical of a larger effect size. What actually happened under the hood to cause this? Below we compare the observed effect size against the estimated “true” effect from each study.</p>
 <pre class="r"><code>effect_true &lt;- gather_draws(fit_meta_ppse, effect_true[obs]) %&gt;% 
   ungroup %&gt;% group_by(obs) %&gt;% 
@@ -586,7 +586,7 @@ p2 &lt;- df %&gt;%
   xlab(&quot;Observed effect se&quot;) + ylab(&quot;Observed effect - True effect&quot;)
   
 p2 + p1</code></pre>
-<p><img src="../../../../post/embracing_uncertainty_files/figure-html/unnamed-chunk-20-1.png" width="960" /></p>
+<p><img src="/post/embracing_uncertainty_files/figure-html/unnamed-chunk-20-1.png" width="960" /></p>
 <p>The answer is shrinkage! The plots above show us that studies we were more unsure about had their estimates shrink towards their cluster’s average. The plot on the left compares a studies standard error against the amount it moved. The plot on the right shows how each individual study shrunk based on it’s effect size.
 Studying our cluster’s random effects show us that a majority of the variation is coming across studies instead of across outcomes. This is also born out in those pooled sigma parameters from our model.</p>
 <pre class="r"><code>post_sigmas &lt;- spread_draws(fit_meta_ppse, sigma_a, sigma_b)
@@ -606,7 +606,7 @@ tibble(&quot;sigma study&quot; = post_sigmas$sigma_a,
   ggtitle(&quot;There is more variation among studies than outcomes&quot;) +
   xlab(&quot;Posterior value&quot;) +
   scale_fill_manual(values = c(&quot;#01768B&quot;, &quot;#FF960B&quot;))</code></pre>
-<p><img src="../../../../post/embracing_uncertainty_files/figure-html/unnamed-chunk-21-1.png" width="960" /></p>
+<p><img src="/post/embracing_uncertainty_files/figure-html/unnamed-chunk-21-1.png" width="960" /></p>
 </div>
 <div id="parting-thoughts" class="section level1">
 <h1>Parting thoughts</h1>
@@ -616,7 +616,7 @@ tibble(&quot;sigma study&quot; = post_sigmas$sigma_a,
 <li>As scientists, we should consider mastering broadly applicable toolsets and avoid using highly use-case specific tools. In particular, I advocate for adding hierarchical regressions to your toolbox by showing how meta-analysis, anova, and measurement-error models are just special cases of hierarchical regression.</li>
 </ol>
 <div class="figure">
-<img src="../../../../post/embracing_uncertainty_files/figure-html/flow.png" alt="Flowhcart of madness" />
+<img src="/post/embracing_uncertainty_files/figure-html/flow.png" alt="Flowhcart of madness" />
 <p class="caption">Flowhcart of madness</p>
 </div>
 <blockquote>
@@ -648,7 +648,7 @@ tibble(&quot;sigma study&quot; = post_sigmas$sigma_a,
       <footer class="footer">
         <ul class="footer-links">
           <li>
-            <a href="../../../../index.xml" type="application/rss+xml" target="_blank">RSS feed</a>
+            <a href="/index.xml" type="application/rss+xml" target="_blank">RSS feed</a>
           </li>
         </ul>
       </footer>
@@ -670,7 +670,7 @@ tibble(&quot;sigma study&quot; = post_sigmas$sigma_a,
 
 
     
-<script src="../../../../js/math-code.js"></script>
+<script src="/js/math-code.js"></script>
 <script async src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"></script>
 
 

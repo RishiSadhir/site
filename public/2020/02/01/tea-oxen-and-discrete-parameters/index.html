@@ -3,14 +3,14 @@
   <head>
     <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Hugo 0.62.1" />
+<meta name="generator" content="Hugo 0.66.0" />
 
 
 <title>Tea, Oxen, and Discrete Parameters - Rishi Sadhir&#39;s personal blog</title>
 <meta property="og:title" content="Tea, Oxen, and Discrete Parameters - Rishi Sadhir&#39;s personal blog">
 
 
-  <link href='../../../../favicon.ico' rel='icon' type='image/x-icon'/>
+  <link href='/favicon.ico' rel='icon' type='image/x-icon'/>
 
 
 
@@ -27,8 +27,8 @@
 
 
 
-<link rel="stylesheet" href="../../../../css/fonts.css" media="all">
-<link rel="stylesheet" href="../../../../css/main.css" media="all">
+<link rel="stylesheet" href="/css/fonts.css" media="all">
+<link rel="stylesheet" href="/css/main.css" media="all">
 
 
 
@@ -37,8 +37,8 @@
     <div class="wrapper">
       <header class="header">
         <nav class="nav">
-  <a href="../../../../" class="nav-logo">
-    <img src="../../../../images/logo.png"
+  <a href="/" class="nav-logo">
+    <img src="/images/logo.png"
          width="50"
          height="50"
          alt="Rishi Sadhir">
@@ -46,7 +46,7 @@
 
   <ul class="nav-links">
     
-    <li><a href="../../../../about/">About</a></li>
+    <li><a href="/about/">About</a></li>
     
     <li><a href="https://github.com/RishiSadhir">GitHub</a></li>
     
@@ -143,7 +143,7 @@ tdf %&gt;%
          title = &quot;Mildly regularizing prior&quot;,
          subtitle = &quot;Shown with 95% credibility about the mean&quot;,
          caption = &quot;Beta(2, 2)\nUsed for Pr(cheat), Pr(drink), and Pr(stable)\n&quot;)</code></pre>
-<p><img src="../../../../post/Bayesian_tea_and_oxen_files/figure-html/unnamed-chunk-3-1.png" width="960" /></p>
+<p><img src="/post/Bayesian_tea_and_oxen_files/figure-html/unnamed-chunk-3-1.png" width="960" /></p>
 <p>So how will we use this model once we’ve found it’s parameters? We’ll calculate new parameters that measure exactly what we need to help with our enforcing decisions. First of all, we can calculate the probability of drinking tea for any child. Below, we use the law of <a href="https://brilliant.org/wiki/law-of-iterated-expectation/">iterated expectations</a> to break out the probability into known chunks. Thats just a fancy way to say you can calculate the probability of an event by looking at every “sub” event contained within it. When we see children drinking tea, they’ve either stabled their ox or they have not.</p>
 <p><span class="math display">\[
 \begin{align}
@@ -295,7 +295,7 @@ p3 &lt;- plot_posterior_density(df_posterior$sigma) + ggtitle(&quot;sigma&quot;)
         plot.title = element_text(hjust = 0.5)) +
   plot_annotation(title = &quot;Posterior distributions recover true parameter values&quot;, 
                   subtitle = &quot;Shown with 95% credibility about the mean and true values as dotted lines&quot;)</code></pre>
-<p><img src="../../../../post/Bayesian_tea_and_oxen_files/figure-html/unnamed-chunk-7-1.png" width="768" /></p>
+<p><img src="/post/Bayesian_tea_and_oxen_files/figure-html/unnamed-chunk-7-1.png" width="768" /></p>
 </div>
 <div id="to-shame-or-not-to-shame" class="section level1">
 <h1>To shame or not to shame</h1>
@@ -343,7 +343,7 @@ p2 &lt;- df_posterior %&gt;%
         panel.grid.major.x = element_line(color = &quot;white&quot;, size = 1)) 
 
 p1 / p2</code></pre>
-<p><img src="../../../../post/Bayesian_tea_and_oxen_files/figure-html/unnamed-chunk-8-1.png" width="768" /></p>
+<p><img src="/post/Bayesian_tea_and_oxen_files/figure-html/unnamed-chunk-8-1.png" width="768" /></p>
 <p>Alright, we’ve gone through a journey from a small Chinese village all the way to mixture models. So should we check in on the children’s stables when they aren’t drinking tea? Our next step would be to definie a utility function that describes how much we value embarrassment vs. catching rule breakers. We can ultimately match those up with our posterior distributions and utilize Bayesian decision theory to do whats best. This is a topic we’ll work on in another post.</p>
 </div>
 
@@ -358,7 +358,7 @@ p1 / p2</code></pre>
       <footer class="footer">
         <ul class="footer-links">
           <li>
-            <a href="../../../../index.xml" type="application/rss+xml" target="_blank">RSS feed</a>
+            <a href="/index.xml" type="application/rss+xml" target="_blank">RSS feed</a>
           </li>
         </ul>
       </footer>
@@ -380,7 +380,7 @@ p1 / p2</code></pre>
 
 
     
-<script src="../../../../js/math-code.js"></script>
+<script src="/js/math-code.js"></script>
 <script async src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"></script>
 
 

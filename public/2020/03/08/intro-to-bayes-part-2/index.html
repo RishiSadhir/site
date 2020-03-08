@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Hugo 0.66.0" />
+
+
+<title>Intro to Bayes: Part 2 - Rishi Sadhir&#39;s personal blog</title>
+<meta property="og:title" content="Intro to Bayes: Part 2 - Rishi Sadhir&#39;s personal blog">
+
+
+  <link href='/favicon.ico' rel='icon' type='image/x-icon'/>
+
+
+
+  
+
+
+
+
+
+
+
+
+<link href='//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css' rel='stylesheet' type='text/css' />
+
+
+
+<link rel="stylesheet" href="/css/fonts.css" media="all">
+<link rel="stylesheet" href="/css/main.css" media="all">
+
+
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header class="header">
+        <nav class="nav">
+  <a href="/" class="nav-logo">
+    <img src="/images/logo.png"
+         width="50"
+         height="50"
+         alt="Rishi Sadhir">
+  </a>
+
+  <ul class="nav-links">
+    
+    <li><a href="/about/">About</a></li>
+    
+    <li><a href="https://github.com/RishiSadhir">GitHub</a></li>
+    
+    <li><a href="https://twitter.com/LordQuas3000">Twitter</a></li>
+    
+  </ul>
+</nav>
+
+      </header>
+
+
+<main class="content" role="main">
+
+  <article class="article">
+    
+    <span class="article-duration">10 min read</span>
+    
+
+    <h1 class="article-title">Intro to Bayes: Part 2</h1>
+
+    
+    <span class="article-date">2020-03-08</span>
+    
+
+    <div class="article-content">
+      <p>In this post, we&rsquo;ll continue to use the coin flip example from <a href="https://www.rishisadhir.com/2020/02/08/intro-to-bayes-part-1/">part 1</a>. Recall that we are interested in the posterior distribution of the parameter θ, which is the probability that a coin toss results in “heads”. Our prior distribution is an uninformative beta distribution with parameters 1 and 1. We also used a binomial likelihood function to estimate how representative a candidate value for θ is to have generated the data we have on hand - 3 observed heads out of 9 tosses.</p>
+<p>In the previous post, we relied on the fact that we could calculate the posterior distribution analytically. We solved for the posterior distribution by taking advantage of conjugacy, when the prior and the posterior have the same distribution. This makes calculating the posterior really easy but we don&rsquo;t have the opportunity to use this trick often in practice. In this post we&rsquo;ll level up by starting to use MCMC simulation to sample from our target distribution: The posterior distribution of θ. In the real world, we&rsquo;d then use these samples to make decisions under the assumption that the samples approximate the target distribution in high enough number.</p>
+<h1 id="markov-chain-monte-carlo">Markov Chain Monte Carlo</h1>
+<p>We&rsquo;ll use MCMC with the M–H algorithm to generate a sample from the posterior distribution of 𝜃 . There are three basic parts to this technique:</p>
+<ol>
+<li>Proposal Distribution - Monte Carlo</li>
+<li>Proposal Exploration - Markov Chain</li>
+<li>Proposal Selection - MH algorithm</li>
+</ol>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># Numeric computing</span>
+<span style="color:#f92672">import</span> numpy <span style="color:#f92672">as</span> np
+<span style="color:#f92672">import</span> scipy.stats <span style="color:#f92672">as</span> stats
+<span style="color:#f92672">import</span> pymc3 <span style="color:#f92672">as</span> pm
+<span style="color:#75715e"># Plotting</span>
+<span style="color:#f92672">import</span> matplotlib.pyplot <span style="color:#f92672">as</span> plt
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e"># Plot theme</span>
+COLOR <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;#2A0933&#34;</span>
+plt<span style="color:#f92672">.</span>rcParams[<span style="color:#e6db74">&#39;text.color&#39;</span>] <span style="color:#f92672">=</span> COLOR
+plt<span style="color:#f92672">.</span>rcParams[<span style="color:#e6db74">&#39;text.hinting_factor&#39;</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">8</span>
+plt<span style="color:#f92672">.</span>rcParams[<span style="color:#e6db74">&#39;axes.labelcolor&#39;</span>] <span style="color:#f92672">=</span> COLOR
+plt<span style="color:#f92672">.</span>rcParams[<span style="color:#e6db74">&#39;axes.facecolor&#39;</span>] <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;eeeeee&#34;</span>
+plt<span style="color:#f92672">.</span>rcParams[<span style="color:#e6db74">&#39;axes.edgecolor&#39;</span>] <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;bcbcbc&#34;</span>
+plt<span style="color:#f92672">.</span>rcParams[<span style="color:#e6db74">&#39;axes.grid&#39;</span>] <span style="color:#f92672">=</span> True
+plt<span style="color:#f92672">.</span>rcParams[<span style="color:#e6db74">&#39;axes.titlesize&#39;</span>] <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;x-large&#34;</span>
+plt<span style="color:#f92672">.</span>rcParams[<span style="color:#e6db74">&#39;axes.labelsize&#39;</span>] <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;large&#34;</span>
+plt<span style="color:#f92672">.</span>rcParams[<span style="color:#e6db74">&#39;xtick.color&#39;</span>] <span style="color:#f92672">=</span> COLOR
+plt<span style="color:#f92672">.</span>rcParams[<span style="color:#e6db74">&#39;ytick.color&#39;</span>] <span style="color:#f92672">=</span> COLOR
+plt<span style="color:#f92672">.</span>rcParams[<span style="color:#e6db74">&#39;grid.color&#39;</span>] <span style="color:#f92672">=</span> COLOR  
+plt<span style="color:#f92672">.</span>rcParams[<span style="color:#e6db74">&#39;grid.linestyle&#39;</span>] <span style="color:#f92672">=</span> <span style="color:#e6db74">&#39;--&#39;</span>
+plt<span style="color:#f92672">.</span>rcParams[<span style="color:#e6db74">&#39;grid.linewidth&#39;</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.5</span>
+plt<span style="color:#f92672">.</span>rcParams[<span style="color:#e6db74">&#39;grid.alpha&#39;</span>] <span style="color:#f92672">=</span> <span style="color:#f92672">.</span><span style="color:#ae81ff">7</span>
+plt<span style="color:#f92672">.</span>rcParams[<span style="color:#e6db74">&#39;lines.linewidth&#39;</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">2.0</span>
+plt<span style="color:#f92672">.</span>rcParams[<span style="color:#e6db74">&#39;patch.linewidth&#39;</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.5</span>
+plt<span style="color:#f92672">.</span>rcParams[<span style="color:#e6db74">&#39;patch.facecolor&#39;</span>] <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;blue&#34;</span>
+plt<span style="color:#f92672">.</span>rcParams[<span style="color:#e6db74">&#39;patch.edgecolor&#39;</span>] <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;eeeeee&#34;</span>
+plt<span style="color:#f92672">.</span>rcParams[<span style="color:#e6db74">&#39;patch.antialiased&#39;</span>] <span style="color:#f92672">=</span> True  
+plt<span style="color:#f92672">.</span>rcParams[<span style="color:#e6db74">&#39;mathtext.fontset&#39;</span>] <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;cm&#34;</span>
+plt<span style="color:#f92672">.</span>rcParams[<span style="color:#e6db74">&#39;legend.fancybox&#39;</span>] <span style="color:#f92672">=</span> True
+plt<span style="color:#f92672">.</span>rcParams[<span style="color:#e6db74">&#39;figure.figsize&#39;</span>] <span style="color:#f92672">=</span> (<span style="color:#ae81ff">11</span>, <span style="color:#ae81ff">8</span>)
+plt<span style="color:#f92672">.</span>rcParams[<span style="color:#e6db74">&#39;figure.dpi&#39;</span>] <span style="color:#f92672">=</span> <span style="color:#ae81ff">300</span>
+</code></pre></div><h2 id="1-proposal-distribution---monte-carlo">1. Proposal Distribution - Monte Carlo</h2>
+<p>MCMC needs a way to explore the parameter space, which is to say we need to be able to test out different possible values for θ. One way to do this is to perform Monte Carlo simulation.</p>
+<p>The term “Monte Carlo” refers to methods that rely on the generation of random numbers. In the example below, we will draw random numbers from a proposal distribution. In practice, the choice of distribution is given much thought, but here we&rsquo;ll use Normal(.5, .1). There are a couple good justifictions for this.</p>
+<ol>
+<li>I&rsquo;d expect this to be pretty close to the target distribution we&rsquo;re after.</li>
+<li>A normal distribution is symmetric on both sides of the mean which make some of the math we&rsquo;ll see later on easier.</li>
+</ol>
+<p>Below, we generate a series of random numbers from our proposal distribution. The graph on the left is called a <em>trace plot</em>. Trace plots display the values of θ in the order in which they are drawn. It basically shows our parameter exploratin pattern. The plot on the left combines all these samples in to a histogram to tell us where to allocate our belief of θs location.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">N <span style="color:#f92672">=</span> <span style="color:#ae81ff">10</span>_000
+x <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>norm<span style="color:#f92672">.</span>rvs(loc<span style="color:#f92672">=.</span><span style="color:#ae81ff">5</span>, scale<span style="color:#f92672">=.</span><span style="color:#ae81ff">1</span>, size<span style="color:#f92672">=</span>N)
+
+fig, axes <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>subplots(nrows<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>, ncols<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span>, figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">14</span>,<span style="color:#ae81ff">3</span>), gridspec_kw<span style="color:#f92672">=</span>{<span style="color:#e6db74">&#39;width_ratios&#39;</span>: [<span style="color:#ae81ff">3</span>, <span style="color:#ae81ff">1.5</span>]})
+axes[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>set_ylim(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>)
+axes[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>set_ylim(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>)
+axes[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>set_xlabel(<span style="color:#e6db74">&#34;&#34;</span>)
+axes[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Density&#34;</span>)
+axes[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>set_xlabel(<span style="color:#e6db74">&#34;MCMC Iteration&#34;</span>)
+axes[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Monte Carlo Exploration&#34;</span>)
+axes[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>yaxis<span style="color:#f92672">.</span>tick_right()
+axes[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>set_ylabel(<span style="color:#e6db74">&#34;$</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">theta$&#34;</span>)
+axes[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Density&#34;</span>)
+axes[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>set_xlabel(<span style="color:#e6db74">&#34;Sample number&#34;</span>)
+axes[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Monte Carlo trace plot&#34;</span>)
+axes[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>hist(x, bins <span style="color:#f92672">=</span> <span style="color:#ae81ff">30</span>, color <span style="color:#f92672">=</span> COLOR, orientation<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;horizontal&#34;</span>)
+xax <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>linspace(start<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>,stop<span style="color:#f92672">=</span>len(x)<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>,num<span style="color:#f92672">=</span>len(x))
+axes[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>plot(xax,x,color<span style="color:#f92672">=</span>COLOR, linewidth<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+plt<span style="color:#f92672">.</span>show()
+</code></pre></div><p><img src="/post/intro_bayes_2/figure-html/output_4_0.png" alt="png"></p>
+<p>The above plot tells us a few import things.</p>
+<ol>
+<li>The proposal distribution is stationary. It doesn&rsquo;t change at all as we continue to draw samples.</li>
+<li>The more samples we draw, the better shape our density takes. With more samples on the left, the more the density on the right approximates our proposal distribution.</li>
+</ol>
+<p>This is cool and all, but we want a distribution that approximates the posterior, not the proposal distribution. We need to go another step forward to explore the parameters space better.</p>
+<h2 id="2-proposal-exploration---markov-chain">2. Proposal Exploration - Markov Chain</h2>
+<p>A Markov chain is a sequence of numbers where each number is dependent on the previous number in the sequence. For example, we could draw values of θ from a normal proposal distribution with a mean equal to the previous value of θ.</p>
+<p>Thats exactly what we do below. We start with a random value from the proposal distribution:
+\begin{align}
+\theta_i \sim normal(.5, .1)
+\end{align}</p>
+<p>Every subsequent draw uses the previous draw as its mean</p>
+<p>\begin{align}
+\theta_i \sim normal(\theta_{i-1}, .1)
+\end{align}</p>
+<p>We draw 10,000 random values of θ using a markov chain to see how this process works.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">N <span style="color:#f92672">=</span> <span style="color:#ae81ff">1000</span>
+x <span style="color:#f92672">=</span> [None] <span style="color:#f92672">*</span> N
+
+<span style="color:#75715e"># Initialize our chain with a random value</span>
+x[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>norm<span style="color:#f92672">.</span>rvs(loc<span style="color:#f92672">=.</span><span style="color:#ae81ff">5</span>, scale<span style="color:#f92672">=.</span><span style="color:#ae81ff">1</span>, size<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)[<span style="color:#ae81ff">0</span>]
+
+<span style="color:#75715e"># Add each movement away from the previous </span>
+<span style="color:#75715e"># value to the chain </span>
+<span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">1</span>,N):
+    prev <span style="color:#f92672">=</span> x[i<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]
+    x[i] <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>norm<span style="color:#f92672">.</span>rvs(loc<span style="color:#f92672">=</span>prev, scale<span style="color:#f92672">=.</span><span style="color:#ae81ff">1</span>, size<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)[<span style="color:#ae81ff">0</span>]
+
+<span style="color:#75715e"># Plot the results</span>
+fig, axes <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>subplots(nrows<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>, ncols<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span>, figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">14</span>,<span style="color:#ae81ff">3</span>), gridspec_kw<span style="color:#f92672">=</span>{<span style="color:#e6db74">&#39;width_ratios&#39;</span>: [<span style="color:#ae81ff">3</span>, <span style="color:#ae81ff">1.5</span>]})
+axes[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>set_xlabel(<span style="color:#e6db74">&#34;&#34;</span>)
+axes[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Density&#34;</span>)
+axes[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>set_xlabel(<span style="color:#e6db74">&#34;MCMC Iteration&#34;</span>)
+axes[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Markov Chain Exploration&#34;</span>)
+axes[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>yaxis<span style="color:#f92672">.</span>tick_right()
+axes[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>set_ylabel(<span style="color:#e6db74">&#34;$</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">theta$&#34;</span>)
+axes[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Density&#34;</span>)
+axes[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>set_xlabel(<span style="color:#e6db74">&#34;MCMC Iteration&#34;</span>)
+axes[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>hist(x, bins <span style="color:#f92672">=</span> <span style="color:#ae81ff">30</span>, color <span style="color:#f92672">=</span> COLOR, orientation<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;horizontal&#34;</span>)
+xax <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>linspace(start<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>,stop<span style="color:#f92672">=</span>len(x)<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>,num<span style="color:#f92672">=</span>len(x))
+axes[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>plot(xax,x,color<span style="color:#f92672">=</span>COLOR, linewidth<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+fig<span style="color:#f92672">.</span>tight_layout()
+plt<span style="color:#f92672">.</span>show()
+</code></pre></div><p><img src="/post/intro_bayes_2/figure-html/output_6_0.png" alt="png"></p>
+<p>The plots above show us two differences between Monte Carlo and Markov Chains.</p>
+<ol>
+<li>The proposal distribution is changing with each iteration. This creates a trace plot with a “random walk” pattern - the variability is not the same over all iterations.</li>
+<li>The resulting density plot does not look like the proposal distribution or any other useful distribution. It certainly doesn’t look like a posterior distribution.</li>
+</ol>
+<p>Again, this isn&rsquo;t what we want, but we are getting a little bit closer. We&rsquo;ve figured out a way to eplore the parameter space, but now we need to think about how to make this exploration look like the posterior. We could improve our sample by keeping proposed values of θ that are more likely under the posterior distribution and discarding values that are less likely. How should we do this? One answer is the M–H algorithm!</p>
+<h2 id="proposal-selection---mh-algorithm">Proposal Selection - MH algorithm</h2>
+<p>MH is an algo that allows us to sample from a generic probability distribution even if we don&rsquo;t know the normalizing constant. To do this, we construct and sample from a markov chain whose stationary distribution is the target distribution we are looking for. It consists of picking an arbitrary starting value and then iteratively accepting or rejecting candidate samples drawn from another distribution, one that is easy to sample.</p>
+<p>Lets say we want to produce samples from a target distribution p(θ) but we only know it up to proportionality. This is the exact case we have for the posterior distribution.</p>
+<p>$$
+Pr(\theta | data) = \frac{Pr(data) | \theta) \times Pr(\theta)}{Pr(data)} \propto Pr(data | \theta) \times Pr(\theta)
+$$</p>
+<p>The algorithm procedes as follows:
+<img src="/post/intro_bayes_2/figure-html/algo.png" alt="png"></p>
+<p>Steps 2.C.b and 2.C.c act as a correction since the proposal distribution is not the target distribution. At each step in the chain, we draw a candidate and decide whether to move the chain there or stay where we are. If the move is advantageous, we will move there for sure. If it isn&rsquo;t advantageous we might still move there, but only with probability α.</p>
+<p>I spell these steps out in the code below too. Lets give it a spin!</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">proposal_density</span>(theta):
+    <span style="color:#e6db74">&#34;&#34;&#34;
+</span><span style="color:#e6db74">    Calculate a value proportional to the posterior
+</span><span style="color:#e6db74">    for a proposed value of the parameter
+</span><span style="color:#e6db74">    &#34;&#34;&#34;</span>
+    prior <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>beta<span style="color:#f92672">.</span>pdf(theta, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>)
+    likelihood <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>binom<span style="color:#f92672">.</span>pmf(p<span style="color:#f92672">=</span>theta, k<span style="color:#f92672">=</span><span style="color:#ae81ff">3</span>, n<span style="color:#f92672">=</span><span style="color:#ae81ff">9</span>)
+    <span style="color:#66d9ef">return</span> prior <span style="color:#f92672">*</span> likelihood
+    
+N <span style="color:#f92672">=</span> <span style="color:#ae81ff">20</span>_000
+x <span style="color:#f92672">=</span> [None] <span style="color:#f92672">*</span> N
+<span style="color:#75715e"># Step 1 - Initialize chain</span>
+x[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>norm<span style="color:#f92672">.</span>rvs(loc<span style="color:#f92672">=.</span><span style="color:#ae81ff">5</span>, scale<span style="color:#f92672">=.</span><span style="color:#ae81ff">1</span>, size<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)[<span style="color:#ae81ff">0</span>]
+<span style="color:#75715e"># Step 2 - Draw samples</span>
+<span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">1</span>,N):
+    <span style="color:#75715e"># Step 2.A - Propose new value</span>
+    previous <span style="color:#f92672">=</span> x[i<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]
+    proposal <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>norm<span style="color:#f92672">.</span>rvs(loc<span style="color:#f92672">=</span>previous, scale<span style="color:#f92672">=.</span><span style="color:#ae81ff">1</span>, size<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)[<span style="color:#ae81ff">0</span>]
+    <span style="color:#75715e"># Step 2.B - Calculate improvement</span>
+    improvement_ratio <span style="color:#f92672">=</span> proposal_density(proposal)<span style="color:#f92672">/</span>proposal_density(previous)
+    <span style="color:#75715e"># Step 3.C - Accept or reject proposal</span>
+    <span style="color:#66d9ef">if</span> improvement_ratio <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">1</span>:
+        x[i] <span style="color:#f92672">=</span> proposal
+    <span style="color:#66d9ef">elif</span> <span style="color:#ae81ff">0</span> <span style="color:#f92672">&lt;</span> improvement_ratio <span style="color:#f92672">&lt;</span> <span style="color:#ae81ff">1</span>:
+        <span style="color:#66d9ef">if</span> stats<span style="color:#f92672">.</span>bernoulli<span style="color:#f92672">.</span>rvs(improvement_ratio, size <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>)[<span style="color:#ae81ff">0</span>]:
+            x[i] <span style="color:#f92672">=</span> proposal
+        <span style="color:#66d9ef">else</span>:
+            x[i] <span style="color:#f92672">=</span> x[i<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]
+    <span style="color:#66d9ef">else</span>:
+        x[i] <span style="color:#f92672">=</span> x[i<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]
+
+fig, axes <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>subplots(nrows<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>, ncols<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span>, figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">14</span>,<span style="color:#ae81ff">3</span>), gridspec_kw<span style="color:#f92672">=</span>{<span style="color:#e6db74">&#39;width_ratios&#39;</span>: [<span style="color:#ae81ff">3</span>, <span style="color:#ae81ff">1.5</span>]})
+axes[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>set_ylim(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>)
+axes[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>set_ylim(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>)
+axes[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>set_xlabel(<span style="color:#e6db74">&#34;&#34;</span>)
+axes[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Density&#34;</span>)
+axes[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>set_xlabel(<span style="color:#e6db74">&#34;MCMC Iteration&#34;</span>)
+axes[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Monte Carlo Exploration&#34;</span>)
+axes[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>yaxis<span style="color:#f92672">.</span>tick_right()
+axes[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>set_ylabel(<span style="color:#e6db74">&#34;$</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">theta$&#34;</span>)
+axes[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Density&#34;</span>)
+axes[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>set_xlabel(<span style="color:#e6db74">&#34;MCMC Iteration&#34;</span>)
+axes[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;HMC NUTS trace plot&#34;</span>)
+axes[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>hist(x, bins <span style="color:#f92672">=</span> <span style="color:#ae81ff">30</span>, color <span style="color:#f92672">=</span> COLOR, orientation<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;horizontal&#34;</span>)
+xax <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>linspace(start<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>,stop<span style="color:#f92672">=</span>len(x)<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>,num<span style="color:#f92672">=</span>len(x))
+axes[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>plot(xax,x,color<span style="color:#f92672">=</span>COLOR, linewidth<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+plt<span style="color:#f92672">.</span>show()
+</code></pre></div><p><img src="/post/intro_bayes_2/figure-html/output_9_0.png" alt="png"></p>
+<p>A few things to note again. First, the proposal distribution changes with most iterations. Second, the trace plot does not exhibit the random walk pattern we observed using MCMC alone. The variation is similar across all iterations, And finally, the density plot looks like a useful distribution.</p>
+<p>Lets check our posterior samples against what we calculated analytically in the previous post.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">x_seq <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>linspace(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1000</span>)
+_density <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>gaussian_kde(x)
+y_post <span style="color:#f92672">=</span> _density<span style="color:#f92672">.</span>pdf(x_seq)
+y_analytic <span style="color:#f92672">=</span> stats<span style="color:#f92672">.</span>beta<span style="color:#f92672">.</span>pdf(x_seq, <span style="color:#ae81ff">3</span><span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">9</span><span style="color:#f92672">-</span><span style="color:#ae81ff">3</span><span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>)
+
+fig, ax <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>subplots(figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">14</span>,<span style="color:#ae81ff">3</span>))
+ax<span style="color:#f92672">.</span>plot(x_seq, y_post, color <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;#2D718E&#34;</span>, label <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;MH Posterior&#34;</span>)
+ax<span style="color:#f92672">.</span>plot(x_seq, y_analytic, color <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;#73D055&#34;</span>, label <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;Conjugate Posterior&#34;</span>)
+ax<span style="color:#f92672">.</span>set_ylabel(<span style="color:#e6db74">&#34;Density&#34;</span>)
+ax<span style="color:#f92672">.</span>set_xlabel(<span style="color:#e6db74">&#34;$</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">theta$&#34;</span>)
+plt<span style="color:#f92672">.</span>legend()
+plt<span style="color:#f92672">.</span>suptitle(<span style="color:#e6db74">&#34;Conjugate and MH Posterior samples align well&#34;</span>)
+plt<span style="color:#f92672">.</span>show()
+</code></pre></div><p><img src="/post/intro_bayes_2/figure-html/output_11_0.png" alt="png"></p>
+<h1 id="dont-use-metropolis-hastings">Don&rsquo;t use Metropolis Hastings</h1>
+<p>MH is the simplest and least reliable way of doing MCMC. The algorithms is extremely simple! It approximates a target distribution by accepting or rejecting random proposals. If you make proposals correctly and accept proposals under specific conditions, the accepted parameter values will comprise samples from the target distribution.</p>
+<p>There have been many improvements since M-H was first proposed in 1953. MH wastes a lot of time exploring inefficiently due to its random nature. If there’s a random way to do something, there’s usually a less random way that is both better and requires more thought. Bayesian tools today use a really cool algorithm called HMC NUTs that essentially treats the parameters space like a physics algorithm. Your chains skate around the paramters space with 0 friction. Usually, this parameter space is bowl shaped (in log space) so all you have is gravity pulling you toward high probablility density regions.</p>
+<p>There are a lot of excellent resources out there to learn the principles behind NUTS, but a great place to start is <a href="https://elevanth.org/blog/2017/11/28/build-a-better-markov-chain/">this blog post by Richard McElreath</a>. If you grasp the basics of M-H, its really not necessary to go deep on the newer stuff to use it in practice.</p>
+<h3 id="pymc3">PyMC3</h3>
+<p>This post goes in to detail to be instructive&hellip; Don&rsquo;t go implementing your own parameter sampling algorithms. There are so many great ones out there already! Stan is my favorite but PyMC3 is a great one too. With just a couple lines of code, I can unleash the physics simulation on our coin flipping example. So lets do that to show how easy it is.</p>
+<p>The first step, like before, is to collect some data.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">obs_coin_flips <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>array([<span style="color:#ae81ff">1</span>]<span style="color:#f92672">*</span><span style="color:#ae81ff">3</span> <span style="color:#f92672">+</span> [<span style="color:#ae81ff">0</span>]<span style="color:#f92672">*</span><span style="color:#ae81ff">6</span>)
+obs_coin_flips
+</code></pre></div><pre><code>array([1, 1, 1, 0, 0, 0, 0, 0, 0])
+</code></pre>
+<p>Now we just define our model, exactly like we did in the first blog post, but this time in code.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">with</span> pm<span style="color:#f92672">.</span>Model() <span style="color:#66d9ef">as</span> coin_flip:
+    pr <span style="color:#f92672">=</span> pm<span style="color:#f92672">.</span>Beta(<span style="color:#e6db74">&#34;pr&#34;</span>, <span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>)
+    is_head <span style="color:#f92672">=</span> pm<span style="color:#f92672">.</span>Bernoulli(<span style="color:#e6db74">&#34;is_head&#34;</span>, pr, observed <span style="color:#f92672">=</span> obs_coin_flips)
+    
+coin_flip
+</code></pre></div><p>$$
+\begin{array}{rcl}
+\text{pr} &amp;\sim &amp; \text{Beta}(\mathit{alpha}=1.0,~\mathit{beta}=1.0)\\ ishead &amp;\sim &amp; \text{Bernoulli}(\mathit{p}=\text{pr})
+\end{array}
+$$</p>
+<p>With our model definition in hand, we tell PyMC3 to start sampling &ndash; And off goes four markov chains in parallel. PyMC3 figures out initial values and a good proposal distribution on its own. It then spins up 4 markov chains that explore according to HMC NUTS.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">with</span> coin_flip:
+    <span style="color:#75715e"># Sample from the posterior distribution</span>
+    posterior <span style="color:#f92672">=</span> pm<span style="color:#f92672">.</span>sample(draws <span style="color:#f92672">=</span> <span style="color:#ae81ff">2000</span>, chains <span style="color:#f92672">=</span> <span style="color:#ae81ff">4</span>, cores <span style="color:#f92672">=</span> <span style="color:#ae81ff">4</span>)
+</code></pre></div><pre><code>Auto-assigning NUTS sampler...
+Initializing NUTS using jitter+adapt_diag...
+Multiprocess sampling (4 chains in 4 jobs)
+NUTS: [pr]
+Sampling 4 chains, 0 divergences: 100%|██████████| 10000/10000 [00:01&lt;00:00, 7253.96draws/s]
+</code></pre>
+<p>And just like that, we have samples from the posterior distribution. Finally, we plot them to make sure they look like they did in our examples above.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">x <span style="color:#f92672">=</span> posterior[<span style="color:#e6db74">&#34;pr&#34;</span>]
+fig, axes <span style="color:#f92672">=</span> plt<span style="color:#f92672">.</span>subplots(nrows<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>, ncols<span style="color:#f92672">=</span><span style="color:#ae81ff">2</span>, figsize<span style="color:#f92672">=</span>(<span style="color:#ae81ff">14</span>,<span style="color:#ae81ff">3</span>), gridspec_kw<span style="color:#f92672">=</span>{<span style="color:#e6db74">&#39;width_ratios&#39;</span>: [<span style="color:#ae81ff">3</span>, <span style="color:#ae81ff">1.5</span>]})
+axes[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>set_ylim(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>)
+axes[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>set_ylim(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">1</span>)
+axes[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>set_xlabel(<span style="color:#e6db74">&#34;&#34;</span>)
+axes[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Density&#34;</span>)
+axes[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>set_xlabel(<span style="color:#e6db74">&#34;MCMC Iteration&#34;</span>)
+axes[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Monte Carlo Exploration&#34;</span>)
+axes[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>yaxis<span style="color:#f92672">.</span>tick_right()
+axes[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>set_ylabel(<span style="color:#e6db74">&#34;$</span><span style="color:#ae81ff">\\</span><span style="color:#e6db74">theta$&#34;</span>)
+axes[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;Density&#34;</span>)
+axes[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>set_xlabel(<span style="color:#e6db74">&#34;MCMC Iteration&#34;</span>)
+axes[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>set_title(<span style="color:#e6db74">&#34;HMC NUTS trace plot&#34;</span>)
+axes[<span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>hist(x, bins <span style="color:#f92672">=</span> <span style="color:#ae81ff">30</span>, color <span style="color:#f92672">=</span> COLOR, orientation<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;horizontal&#34;</span>)
+xax <span style="color:#f92672">=</span> np<span style="color:#f92672">.</span>linspace(start<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span>,stop<span style="color:#f92672">=</span>len(x)<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>,num<span style="color:#f92672">=</span>len(x))
+axes[<span style="color:#ae81ff">0</span>]<span style="color:#f92672">.</span>plot(xax,x,color<span style="color:#f92672">=</span>COLOR, linewidth<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+plt<span style="color:#f92672">.</span>show()
+</code></pre></div><p><img src="/post/intro_bayes_2/figure-html/output_19_0.png" alt="png"></p>
+<h1 id="summary">Summary</h1>
+<p>This blog post introduced the idea behind MCMC using the M–H algorithm. Note that I have omitted some details and ignored some assumptions so that we could keep things simple and develop our intuition. Stan and PyMC3 implement much more sophisticated algorithms and should be your go-to&hellip; But the basic idea is the same. Go forth without fear and let your chains run wild! I hope I’ve inspired you to leverage Bayesian methods in your next analysis.</p>
+
+    </div>
+  </article>
+
+  
+
+
+</main>
+
+      <footer class="footer">
+        <ul class="footer-links">
+          <li>
+            <a href="/index.xml" type="application/rss+xml" target="_blank">RSS feed</a>
+          </li>
+        </ul>
+      </footer>
+
+    </div>
+    
+
+
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+
+
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/r.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/yaml.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/python.min.js"></script>
+<script>hljs.configure({languages: []}); hljs.initHighlightingOnLoad();</script>
+
+
+
+    
+<script src="/js/math-code.js"></script>
+<script async src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+
+    
+  </body>
+</html>
+
