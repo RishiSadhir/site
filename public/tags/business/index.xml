@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Business on Rishi Sadhir&#39;s personal blog</title>
+    <link>/tags/business/</link>
+    <description>Recent content in Business on Rishi Sadhir&#39;s personal blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sat, 14 Mar 2020 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="/tags/business/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Business Writing for Data Scientists</title>
+      <link>/2020/03/14/business-writing-for-data-scientists/</link>
+      <pubDate>Sat, 14 Mar 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/2020/03/14/business-writing-for-data-scientists/</guid>
+      <description>In this blog post we’ll focus especially on the task of writing. Emails, proposals, reports, and designs all convey our ideas. The way we dress up our ideas matter. Those who write poorly create barriers between themselves and their readers; those who write well connect with readers, open their minds, and achieve goals. Good writing gets ideas noticed. It gets them realized. So don’t be mislead: Writing well is a big deal.</description>
+    </item>
+    
+  </channel>
+</rss>
