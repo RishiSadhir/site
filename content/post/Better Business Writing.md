@@ -6,39 +6,35 @@ categories: ["Business"]
 tags: ["Business"]
 ---
 
-In this blog post we’ll focus especially on the task of writing. Emails, proposals, reports, and designs all convey our ideas. The way we dress up our ideas matter. Those who write poorly create barriers between themselves and their readers; those who write well connect with readers, open their minds, and achieve goals. Good writing gets ideas noticed. It gets them realized. So don’t be mislead: Writing well is a big deal. This is especially true for Data Scientists. 
+In this blog post we’ll focus on the task of writing. Emails, proposals, reports, and designs all convey our ideas. The way we dress up our ideas matter. Those who write poorly create barriers between themselves and their readers; those who write well connect with readers, open their minds, and achieve goals. Good writing gets ideas noticed. It gets them realized. So don’t be mislead: Writing well is a big deal. This is especially true for Data Scientists. 
 
-## Data Scientists need to be authors
+## Data Scientists as authors
 
-Data science brings a unique superpower to business; We’re able to answer questions fundamental to corporate strategy with rigor and accuracy. We also have the ability to bring incredible scale to decision making processes. When it's applied to the right problem it's extremely powerful. But we must be careful with where we invest. We need to weigh the ROI of our resource expenditure against the next best solution. 
+Data science brings a unique superpower to business; We’re able to answer questions fundamental to corporate strategy with rigor, accuracy, and scale. When dat science is applied to the right problem it's extremely powerful, but we must be careful with where we invest.
 
-
-Take the following e-commerce problem as an example: Will the investment required to stand up a deep learning based recommender system housed in a page-load granular service have greater incremental payoff than simply sorting products by their order frequency? 
-
-
-Sometimes, the answer to questions like this is yes. Often it’s no. It's up to us as scientists to carry the mantle of rigor and persuade on its behalf when appropriate. We must equip our business partners to collaborate with us effectively with us when opportunity strikes. To that end, the ability to effectively communicate for persuasion and collaboration are a fundamental competency for data scientists. 
+Take the following e-commerce problem as an example: Will the investment required to stand up a deep learning based recommender system housed in a page-load granular service have greater incremental payoff than simply sorting products by their order frequency?
 
 
-In this post, we’ll outline some writing tips that will help us carry the sail the flag of rigor into the seas of business.
+Sometimes, the answer to questions like this is yes. Often it’s no. It's up to us as scientists to carry the mantle of rigor and persuade on its behalf when appropriate. This takes frequent writing for initial persuasion and update reports for frequent collaboration. We must equip our business partners to collaborate with us effectively with us when opportunity strikes. Writing is a fundamental competency for data scientists. 
 
+In this post, we’ll outline some writing tips that will help us the sail the flag of rigor into the seas of business.
 
 #### Tip 1: Know why you’re writing
 Before you start writing, say clearly and convincingly what the issue is and what you want to accomplish. With every sentence, ask yourself whether you’re advancing the case. This will help you find the best words to get your message across. In particular, you want to make sure your tone is appropriate. In data science, the last piece typically means not to condescend to a business audience.
 
 
 #### Tip 2: Respect your reader’s time
-The most important thing to remember is that business readers are extremely busy. At the slightest struggle to understand something, you’ll lose them. This gets more and more true as your audience gets more senior. This means our job is to get to the point fast and do everything we can to make it simple to understand. Doing this right entails thinking carefully about who your audience is and tailoring your message to their motivations. When  you have a large diverse audience, you can choose an intelligent nonspecialist member of your audience to write for.
+The most important thing to remember is that business readers are extremely busy. At the slightest struggle to understand something, you’ll lose them. This gets more and more true as your audience gets more senior. Our job is to get to the point fast and do everything we can to make it simple to understand. Doing this right entails thinking carefully about who our audience is and tailoring our message to their motivations. When we have a large diverse audience, we can choose an intelligent nonspecialist member of your audience to write for.
 
 
 #### Tip 3: Plan before you start
 Don’t just start writing, instead, approach writing as a series of manageable tasks (MACJ).
-1. The Madman: Gather research and other material for the project. Organize this into points you are trying to make and their supporting facts/opinions. 
-2. The Architect: Organizes materials into sensible outlines. Categorize points in sets of three and arrange them  in logical order.
-3. The Carpenter: Write as quickly as possible without perfecting your prose. In this phase, don’t slow yourself down to perfect your wording. Time box yourself and get going.
+1. The Madman: Gather research and other material for the project. Organize this into points we are trying to make and their supporting facts/opinions. 
+2. The Architect: Organizes materials into sensible outlines. Categorize points in sets of three and arrange them in logical order.
+3. The Carpenter: Write as quickly as possible without perfecting your prose. In this phase, don’t slow yourself down thinking about anything else but writing. Time box yourself and get going.
 4. The Judge: Edit, polish, and improve your document in several distinct passes. First, take a fresh look at your content and structure. Make sure your main points are coming through. Then tighten and fine-tune your prose.
+
 With this process, there’s no need to wait for inspiration. Just start planning, architecting, and writing as fast as you can. 
-
-
 #### Tip 4: Shoot for relentless clarity
 Put yourself in your readers shoes and judge every one of your sentences and points for clarity. Aim for short words and sentences, avoiding jargon as much as you can. You want to reduce any and all cognitive overload to your points. Never use two or three words when one will do. A few additional tips
 * Delete prepositions like “of.” For example, swap “developers of numpy...” to “numpy developers...”
