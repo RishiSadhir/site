@@ -12,6 +12,16 @@
     
     
     <item>
+      <title>Catch and Release</title>
+      <link>/2020/03/20/catch-and-release/</link>
+      <pubDate>Fri, 20 Mar 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/2020/03/20/catch-and-release/</guid>
+      <description>Today we’re going to think through how to estimate the number of fish in a lake. This kind of problem is faced regularly by ecologists trying to estimate population sizes. It will also give us a great tour of the fundamentals. Lets get started.
+library(tidyverse) Our approach will be to tag a few fish, wait a while, then catch more fish. The proportion of new fish with original tags will give us the information we need to make estimates about the larger population.</description>
+    </item>
+    
+    <item>
       <title>Business Writing for Data Scientists</title>
       <link>/2020/03/14/business-writing-for-data-scientists/</link>
       <pubDate>Sat, 14 Mar 2020 00:00:00 +0000</pubDate>
@@ -74,6 +84,15 @@
       <guid>/2019/12/31/t-test-is-not-best/</guid>
       <description>In this post, we explore the task of comparing groups of measurements. We’ve all heard about the T-Test, but Bayesian statistics offers an interesting alternative. Let’s talk about how “Bayesian estimation supersedes the t-test” (Kruschke, 2013).
 Preliminaries In this post, we’ll encode Kruschke’s methods in STAN and use it to compare action move ratings versus comedy movie ratings. The code shown below is also available in python here along with the supporting CSV.</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>/1/01/01/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/1/01/01/</guid>
+      <description></description>
     </item>
     
   </channel>

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Hugo 0.66.0" />
+
+
+<title>Catch and Release - Rishi Sadhir&#39;s personal blog</title>
+<meta property="og:title" content="Catch and Release - Rishi Sadhir&#39;s personal blog">
+
+
+  <link href='/favicon.ico' rel='icon' type='image/x-icon'/>
+
+
+
+  
+
+
+
+
+
+
+
+
+<link href='//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css' rel='stylesheet' type='text/css' />
+
+
+
+<link rel="stylesheet" href="/css/fonts.css" media="all">
+<link rel="stylesheet" href="/css/main.css" media="all">
+
+
+
+  </head>
+  <body>
+    <div class="wrapper">
+      <header class="header">
+        <nav class="nav">
+  <a href="/" class="nav-logo">
+    <img src="/images/logo.png"
+         width="50"
+         height="50"
+         alt="Rishi Sadhir">
+  </a>
+
+  <ul class="nav-links">
+    
+    <li><a href="/about/">About</a></li>
+    
+    <li><a href="https://github.com/RishiSadhir">GitHub</a></li>
+    
+    <li><a href="https://twitter.com/LordQuas3000">Twitter</a></li>
+    
+  </ul>
+</nav>
+
+      </header>
+
+
+<main class="content" role="main">
+
+  <article class="article">
+    
+    <span class="article-duration">4 min read</span>
+    
+
+    <h1 class="article-title">Catch and Release</h1>
+
+    
+    <span class="article-date">2020-03-20</span>
+    
+
+    <div class="article-content">
+      
+
+
+<p>Today we’re going to think through how to estimate the number of fish in a lake. This kind of problem is faced regularly by <a href="https://en.wikipedia.org/wiki/Mark_and_recapture">ecologists</a> trying to estimate population sizes. It will also give us a great tour of the fundamentals. Lets get started.</p>
+<pre class="r"><code>library(tidyverse)</code></pre>
+<p>Our approach will be to tag a few fish, wait a while, then catch more fish. The proportion of new fish with original tags will give us the information we need to make estimates about the larger population.</p>
+<p>To make it concrete, lets simulate some data. Suppose we catch, tag, and release 68 fish. Then, after a month, we go fishing again. This time we landed 219 rainbow trout, 16 of which were tagged.</p>
+<pre class="r"><code># Data collection
+total_tagged &lt;- 68
+caught &lt;- 219
+tagged &lt;- 16</code></pre>
+<div id="what-proportion-of-fish-are-tagged" class="section level3">
+<h3>What proportion of fish are tagged?</h3>
+<p>At first this question sounds easy, its just <span class="math inline">\(\frac{16}{219}\)</span> = 0.073 right? The question becomes more interesting when you consider the amount of uncertainty around that estimate. We care about the amount of uncertainty because it may influence us to gather more data by going out and tagging catching, and releasing again.</p>
+<p>To get that more holistic answer to this question, lets start model building. We’ll consider each caught fish as a bernoulli trial where a success is whether or not it was tagged. We’ll use flat prior for the proportion of tagged fish, <span class="math inline">\(p\)</span>.</p>
+<p><span class="math display">\[
+\begin{align}
+is\_tagged_i &amp;\sim Bernoulli(p) \\
+p &amp;\sim Beta(1, 1)
+\end{align}
+\]</span></p>
+<p>We can aggregate up bernoulli trials into a binomial to take advantage of beta-binomial conjugacy.</p>
+<p><span class="math display">\[
+\begin{align}
+tagged &amp;\sim Binomial(caught, p) \\
+p &amp;\sim Beta(1, 1)
+\end{align}
+\]</span></p>
+<p>Conjugacy happens when the posterior distribution can be solved for by hand without having to rely on fancy sampling a la Stan or PyMC3.</p>
+<p><span class="math display">\[
+\begin{align}
+Posterior &amp;= Prior * Likelihood \\
+Pr(p | d) &amp;= Pr(p) * Pr(d | p) \\
+Pr(p | d) &amp;= Beta(\alpha, \beta) * Binomial(n, k) \\
+Pr(p | d) &amp;= Beta(\alpha + k, n - k + \beta) \\
+Pr(p | d) &amp;= Beta(1+tagged, caught - tagged + 1) \\
+Pr(p | d) &amp;= Beta(17, 204) \\
+\end{align}
+\]</span></p>
+<p>Armed with this knowledge, we draw 1000 posterior samples in the code below. Then we take our posterior and calculate the mean and 95% credible interval about it.</p>
+<pre class="r"><code># Posterior
+N &lt;- 1e4
+posterior &lt;- rbeta(N, 1+tagged, 1+(caught-tagged))
+
+# Summary
+ci &lt;- round(as_vector(HDInterval::hdi(posterior)), 3)
+m &lt;- round(mean(posterior), 3)
+
+# Report
+s &lt;- glue::glue(&quot;The proportion of tagged fish is approximately {m} with 95% credibile mass within {ci[1]} and {ci[2]}.&quot;)
+print(s)</code></pre>
+<pre><code>## The proportion of tagged fish is approximately 0.077 with 95% credibile mass within 0.043 and 0.111.</code></pre>
+<p>I’m always playing with different ways to plot posterior distributions and this is my latest favorite.</p>
+<pre class="r"><code>plot_posterior &lt;- function(post) {
+  df_dens &lt;- tibble(
+    x = density(post)$x,
+    y = density(post)$y)
+  
+  ci &lt;- round(as_vector(HDInterval::hdi(post)), 3)
+  m &lt;- round(mean(post), 3)
+
+  df_dens %&gt;% 
+  ggplot(aes(x, y)) +
+    geom_line() +
+    geom_ribbon(data = filter(df_dens, x &gt; ci[[1]] &amp; x &lt; ci[[2]]),
+                aes(ymin = 0, ymax = y), 
+                fill = &quot;grey&quot;, color = &quot;transparent&quot;)   
+  }
+
+plot_posterior(posterior) +
+    annotate(&quot;text&quot;, x = .078, y = 3, label = glue::glue(&quot;95% Credibe Interval\n[{ci[1]}, {ci[2]}]&quot;)) +
+    annotate(&quot;text&quot;, x = .076, y = 12, label = glue::glue(&quot;Mean: {m}&quot;)) +
+    ggtitle(&quot;Proportion of tagged fish in the lake&quot;) +
+    scale_y_continuous(&quot;Density&quot;, NULL) +
+    scale_x_continuous(&quot;Posterior Probability&quot;, breaks = seq(0, .2, .02), limits = c(.02, .18)) +
+    theme(panel.background = element_rect(color = &quot;black&quot;, fill = &quot;transparent&quot;),
+          panel.grid = element_blank())</code></pre>
+<p><img src="/post/catch_and_release_files/figure-html/unnamed-chunk-4-1.png" width="960" /></p>
+</div>
+<div id="how-many-fish-are-in-the-lake" class="section level3">
+<h3>How many fish are in the lake</h3>
+<p>Now that we know the proportion of tagged fish it should be easy to calculate the total number of fish. This is because:</p>
+<p><span class="math display">\[
+\begin{align}
+\frac{tagged}{caught} &amp;= \frac{total\_marked}{total\_fish} \\
+total\_fish &amp;= \frac{total\_marked}{\frac{tagged}{caught}}
+\end{align}
+\]</span></p>
+<p>That term in the bottom right is the proportion we calculated earlier. Because we have the full posterior for that term we can just push it on through the calculation to propagate our uncertainty forward.</p>
+<pre class="r"><code>post_total &lt;- total_tagged/posterior
+
+ci &lt;- round(as_vector(HDInterval::hdi(post_total, .9)))
+m &lt;- round(mean(post_total))
+
+s &lt;- glue::glue(&quot;The number of fish the lake is {m} with 95% credibile mass within {ci[1]} and {ci[2]}.&quot;)
+
+print(s)</code></pre>
+<pre><code>## The number of fish the lake is 936 with 95% credibile mass within 592 and 1292.</code></pre>
+<p>Lets graph our uncertainty just like before.</p>
+<pre class="r"><code>plot_posterior(post_total) +
+    annotate(&quot;text&quot;, x = 925, y = .0003, label = glue::glue(&quot;95% Credible Interval\n[{ci[1]}, {ci[2]}]&quot;)) +
+    annotate(&quot;text&quot;, x = 900, y = .0008, label = glue::glue(&quot;Mean: {m}&quot;)) +
+    scale_y_continuous(&quot;Density&quot;, NULL) + 
+    scale_x_continuous(&quot;Total number of fish&quot;, seq(0, 3000, 250)) +
+    ggtitle(&quot;Proportion of tagged fish in the lake&quot;) +
+    theme(panel.background = element_rect(color = &quot;black&quot;, fill = &quot;transparent&quot;),
+          panel.grid = element_blank())</code></pre>
+<p><img src="/post/catch_and_release_files/figure-html/unnamed-chunk-6-1.png" width="960" /></p>
+<p>And there we have it. With this distribution we can make future informed decisions based on the health of the lake. We can also gather more data to get more certainty about our measurment.</p>
+</div>
+
+    </div>
+  </article>
+
+  
+
+
+</main>
+
+      <footer class="footer">
+        <ul class="footer-links">
+          <li>
+            <a href="/index.xml" type="application/rss+xml" target="_blank">RSS feed</a>
+          </li>
+        </ul>
+      </footer>
+
+    </div>
+    
+
+
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+
+
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/r.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/yaml.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/languages/python.min.js"></script>
+<script>hljs.configure({languages: []}); hljs.initHighlightingOnLoad();</script>
+
+
+
+    
+<script src="/js/math-code.js"></script>
+<script async src="//cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+
+    
+  </body>
+</html>
+
