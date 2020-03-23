@@ -4,140 +4,126 @@ date: '2020-03-20'
 output: html_notebook
 ---
 
-Today we're going to think through how to estimate the number of fish in a lake. This kind of problem is faced regularly by [ecologists](https://en.wikipedia.org/wiki/Mark_and_recapture) trying to estimate population sizes. It will also give us a great tour of the fundamentals. Lets get started.
+Today we're going to think through how to estimate the number of fish in a lake. This kind of problem is faced regularly by [ecologists](https://en.wikipedia.org/wiki/Mark_and_recapture) trying to estimate population sizes. It will also give us a great tour of some cool STAN fundamentals. Lets get started.
 
 ```{r message=FALSE, warning=FALSE}
 library(tidyverse)
+library(rstan)
 ```
 
-Our approach will be to tag a few fish, wait a while, then catch more fish. The proportion of new fish  with original tags will give us the information we need to make estimates about the larger population.
+Our approach will be to tag a few fish, wait a while, then catch some more. The proportion of new fish with original tags will give us the information we need to make estimates about the larger population.
 
-To make it concrete, lets simulate some data. Suppose we catch, tag, and release 68 fish. Then, after a month, we go fishing again. This time we landed 219 rainbow trout, 16 of which were tagged.
+To make it concrete, lets simulate some data. Suppose we catch, tag, and release 68 fish. Then, after a month, we go fishing again. This time we landed 219 rainbow trout, 16 of which were marked.
 
 ```{r}
 # Data collection
-total_tagged <- 68
-caught <- 219
-tagged <- 16
+dlist <- list(
+  tagged = 68,
+  captured = 219,
+  returned = 16)
+dlist
 ```
 
-
-### What proportion of fish are tagged?
-
-At first this question sounds easy, its just $\frac{16}{219}$ = `r round(16/219, 3)` right? The question becomes more interesting when you consider the amount of uncertainty around that estimate. We care about the amount of uncertainty because it may influence us to gather more data by going out and tagging catching, and releasing again.
-
-To get that more holistic answer to this question, lets start model building. We'll consider each caught fish as a bernoulli trial where a success is whether or not it was tagged. We'll use flat prior for the proportion of tagged fish, $p$.
+To buid our intuition for this problem, we can think of the ratio of marked fish in our recapture session as representative of the larger population.
 
 $$
 \begin{align}
-is\_tagged_i &\sim Bernoulli(p) \\
-p &\sim Beta(1, 1)
+\frac{returned}{captured} &= \frac{tagged}{N} \\
+N &= \frac{tagged}{\frac{returned}{captured}}
 \end{align}
 $$
 
-We can aggregate up bernoulli trials into a binomial to take advantage of beta-binomial conjugacy. 
+Popping this equation in to R and getting our estimate is easy. 
 
-$$
-\begin{align}
-tagged &\sim Binomial(caught, p) \\
-p &\sim Beta(1, 1)
-\end{align}
-$$
-
-Conjugacy happens when the posterior distribution can be solved for by hand without having to rely on fancy sampling a la Stan or PyMC3.
-
-$$
-\begin{align}
-Posterior &= Prior * Likelihood \\
-Pr(p | d) &= Pr(p) * Pr(d | p) \\
-Pr(p | d) &= Beta(\alpha, \beta) * Binomial(n, k) \\
-Pr(p | d) &= Beta(\alpha + k, n - k + \beta) \\
-Pr(p | d) &= Beta(1+tagged, caught - tagged + 1) \\
-Pr(p | d) &= Beta(17, 204) \\
-\end{align}
-$$
-
-Armed with this knowledge, we draw 1000 posterior samples in the code below. Then we take our posterior and calculate the mean and 95% credible interval about it.
-
-```{r fig.height=2, fig.width=6, message=FALSE, warning=FALSE}
-# Posterior
-N <- 1e4
-posterior <- rbeta(N, 1+tagged, 1+(caught-tagged))
-
-# Summary
-ci <- round(as_vector(HDInterval::hdi(posterior)), 3)
-m <- round(mean(posterior), 3)
-
-# Report
-s <- glue::glue("The proportion of tagged fish is approximately {m} with 95% credibile mass within {ci[1]} and {ci[2]}.")
-print(s)
+```{r}
+map <- with(dlist, tagged / (returned / captured))
+map
 ```
 
-I'm always playing with different ways to plot posterior distributions and this is my latest favorite.
+The question becomes more interesting when you consider the amount of uncertainty around that estimate. This is important to quantify because it may influence us to gather more data by going out and tagging catching, and releasing again.
 
-```{r fig.height=3, fig.width=10, message=FALSE, warning=FALSE}
-plot_posterior <- function(post) {
-  df_dens <- tibble(
-    x = density(post)$x,
-    y = density(post)$y)
+To get that more holistic answer to this question, lets start model building. We'll consider each caught fish as a bernoulli trial where a success is whether or not it was tagged. We can aggregate up bernoulli trials into a binomial model. This is shown in the equation below. Our free parameter is the number of total fish in the lake, $N$. 
+
+$$
+\begin{align}
+returned &\sim Binomial(captured, \frac{tagged}{N}) \\
+\end{align}
+$$
+
+Lets encode this model directly in stan. Note that we are using a flat prior which will make the posterior representative of the MAP estimate above. In reality, we would probably have decent priors based on the size of the lake, previous studies, or information about other lakes. 
+
+```{stan output.var = "lincolnpeterson"}
+data {
+  int<lower=0> tagged;
+  int<lower=0> captured;
+  int<lower=0, upper=min(tagged, captured)> returned;
+}
+parameters {
+  real<lower=(captured + tagged - returned)> N;
+}
+model {
+  returned ~ binomial(captured, tagged / N);
+}
+```
+
+Lets think about our free parameter, $N$, for a second. We have some information on how to set a lower bound for this parameter in the problem setup. Our first tagging session has us seeing 68 fish. The second capture session netted us 271 fish. Between those two sets, there were 16 fish in common. So we know that there are at least $219 + 68 - 16 = 271$ fish out there. It's actually important to get this lower bound right. Our sampler will have trouble with its binomial model if it starts trying to grab samples larger than the population.
+```{stan output.var = "bad"}
+data {
+  int<lower=0> tagged;
+  int<lower=0> captured;
+  int<lower=0, upper=min(tagged, captured)> returned;
+}
+parameters {
+  real N;
+}
+model {
+  returned ~ binomial(captured, tagged / N);
+}
+```
+
+Now that we've spelled it all out, let's take the model to the data. We pop our observations in to stan and let it search around for N.
+
+```{r}
+fit <- sampling(lincolnpeterson, data = dlist, refresh = 0,
+                chains = 4, cores = 4, iter = 4000)
+print(fit, probs = c(.95, .05))
+```
+
+Lets zoom in to the N parameter and visualize it. I'm always playing with different ways to plot posterior distributions and this is my latest favorite. It's interesting to note the difference between mode and mean of the distribution. Our analysis has allocated significant belief to the right of the distribution. This goes to show that the MAP values returned by frequentist analyses aren't always the best to go with.
+
+```{r fig.height=3, fig.width=12}
+posterior <- rstan::extract(fit)
+dens <- density(posterior$N)
+
+df_dens <- tibble(
+  x = dens$x,
+  y = dens$y)
   
-  ci <- round(as_vector(HDInterval::hdi(post)), 3)
-  m <- round(mean(post), 3)
+ci <- round(as_vector(HDInterval::hdi(posterior$N)), 1)
+m <- round(mean(posterior$N), 1)
 
-  df_dens %>% 
+df_dens %>% 
   ggplot(aes(x, y)) +
+    geom_vline(xintercept = map, linetype=2) +
+    geom_vline(xintercept = m) +
     geom_line() +
     geom_ribbon(data = filter(df_dens, x > ci[[1]] & x < ci[[2]]),
                 aes(ymin = 0, ymax = y), 
-                fill = "grey", color = "transparent")   
-  }
-
-plot_posterior(posterior) +
-    annotate("text", x = .078, y = 3, label = glue::glue("95% Credibe Interval\n[{ci[1]}, {ci[2]}]")) +
-    annotate("text", x = .076, y = 12, label = glue::glue("Mean: {m}")) +
-    ggtitle("Proportion of tagged fish in the lake") +
-    scale_y_continuous("Density", NULL) +
-    scale_x_continuous("Posterior Probability", breaks = seq(0, .2, .02), limits = c(.02, .18)) +
+                fill = "grey", color = "transparent") +
+    annotate("text", x = 975, y = .0002, label = glue::glue("95% Credibe Interval\n[{ci[1]}, {ci[2]}]")) +
+    annotate("text", x = 975, y = .0012, label = glue::glue("Mean: {m}")) +
+    ggtitle("Bayesian estimation of fish population", "Results from a Lincoln-Peterson simulation") +
+    labs(caption = "The distribution is overlayed on top of the MAP estimate calculated earlier (dotted line) and the mean (solid line)") +
+    scale_y_continuous("Density") +
+    scale_x_continuous("Posterior fish population size", breaks = as.numeric(c(ci, m, map))) +
     theme(panel.background = element_rect(color = "black", fill = "transparent"),
           panel.grid = element_blank())
 ```
 
-### How many fish are in the lake
+And there we have it. With this distribution we can make future informed decisions based on the health of the lake. We can also gather more data to get more certainty about our measurment. We made a major assumption with this model - there were no deaths or births in the larger population. There are some really cool new [higherarchical flavors of mark and recapture models](http://www.stats.otago.ac.nz/webdata/resources/matthew_schofield/PhD_research/PhDThesisrevised.pdf) that I may revisit here if there is interest.
 
-Now that we know the proportion of tagged fish it should be easy to calculate the total number of fish. This is because:
 
-$$
-\begin{align}
-\frac{tagged}{caught} &= \frac{total\_marked}{total\_fish} \\
-total\_fish &= \frac{total\_marked}{\frac{tagged}{caught}}
-\end{align}
-$$
 
-That term in the bottom right is the proportion we calculated earlier. Because we have the full posterior for that term we can just push it on through the calculation to propagate our uncertainty forward.
 
-```{r}
-post_total <- total_tagged/posterior
 
-ci <- round(as_vector(HDInterval::hdi(post_total, .9)))
-m <- round(mean(post_total))
-
-s <- glue::glue("The number of fish the lake is {m} with 95% credibile mass within {ci[1]} and {ci[2]}.")
-
-print(s)
-```
-
-Lets graph our uncertainty just like before.
-
-```{r fig.height=3, fig.width=10, message=FALSE, warning=FALSE}
-plot_posterior(post_total) +
-    annotate("text", x = 925, y = .0003, label = glue::glue("95% Credible Interval\n[{ci[1]}, {ci[2]}]")) +
-    annotate("text", x = 900, y = .0008, label = glue::glue("Mean: {m}")) +
-    scale_y_continuous("Density", NULL) + 
-    scale_x_continuous("Total number of fish", seq(0, 3000, 250)) +
-    ggtitle("Proportion of tagged fish in the lake") +
-    theme(panel.background = element_rect(color = "black", fill = "transparent"),
-          panel.grid = element_blank())
-```
-
-And there we have it. With this distribution we can make future informed decisions based on the health of the lake. We can also gather more data to get more certainty about our measurment.
 

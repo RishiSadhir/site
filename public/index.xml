@@ -17,8 +17,8 @@
       <pubDate>Fri, 20 Mar 2020 00:00:00 +0000</pubDate>
       
       <guid>/2020/03/20/catch-and-release/</guid>
-      <description>Today we’re going to think through how to estimate the number of fish in a lake. This kind of problem is faced regularly by ecologists trying to estimate population sizes. It will also give us a great tour of the fundamentals. Lets get started.
-library(tidyverse) Our approach will be to tag a few fish, wait a while, then catch more fish. The proportion of new fish with original tags will give us the information we need to make estimates about the larger population.</description>
+      <description>Today we’re going to think through how to estimate the number of fish in a lake. This kind of problem is faced regularly by ecologists trying to estimate population sizes. It will also give us a great tour of some cool STAN fundamentals. Lets get started.
+library(tidyverse) library(rstan) Our approach will be to tag a few fish, wait a while, then catch some more. The proportion of new fish with original tags will give us the information we need to make estimates about the larger population.</description>
     </item>
     
     <item>
