@@ -86,14 +86,5 @@ library(tidyverse) library(rstan) Our approach will be to tag a few fish, wait a
 Preliminaries In this post, we’ll encode Kruschke’s methods in STAN and use it to compare action move ratings versus comedy movie ratings. The code shown below is also available in python here along with the supporting CSV.</description>
     </item>
     
-    <item>
-      <title></title>
-      <link>/1/01/01/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>/1/01/01/</guid>
-      <description></description>
-    </item>
-    
   </channel>
 </rss>
