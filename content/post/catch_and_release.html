@@ -62,7 +62,7 @@ model {
   int&lt;lower=0, upper=min(tagged, captured)&gt; returned;
 }
 parameters {
-  real N;
+  real&lt;lower=tagged+captured-returned&gt; N;
 }
 model {
   returned ~ binomial(captured, tagged / N);
@@ -76,10 +76,10 @@ print(fit, probs = c(.95, .05))</code></pre>
 ## post-warmup draws per chain=2000, total post-warmup draws=8000.
 ## 
 ##         mean se_mean     sd     95%     5% n_eff Rhat
-## N    1059.55    5.35 282.83 1587.69 682.89  2796    1
-## lp__  -51.23    0.01   0.72  -50.72 -52.75  2988    1
+## N    1059.75    5.29 288.19 1602.99 688.82  2966    1
+## lp__  -51.24    0.01   0.75  -50.72 -52.72  2923    1
 ## 
-## Samples were drawn using NUTS(diag_e) at Sun Mar 22 22:33:29 2020.
+## Samples were drawn using NUTS(diag_e) at Mon Mar 23 12:15:58 2020.
 ## For each parameter, n_eff is a crude measure of effective sample size,
 ## and Rhat is the potential scale reduction factor on split chains (at 
 ## convergence, Rhat=1).</code></pre>
@@ -100,7 +100,7 @@ df_dens %&gt;%
     geom_vline(xintercept = m) +
     geom_line() +
     geom_ribbon(data = filter(df_dens, x &gt; ci[[1]] &amp; x &lt; ci[[2]]),
-                aes(ymin = 0, ymax = y), 
+                aes(ymin = 0, ymax = y),
                 fill = &quot;grey&quot;, color = &quot;transparent&quot;) +
     annotate(&quot;text&quot;, x = 975, y = .0002, label = glue::glue(&quot;95% Credibe Interval\n[{ci[1]}, {ci[2]}]&quot;)) +
     annotate(&quot;text&quot;, x = 975, y = .0012, label = glue::glue(&quot;Mean: {m}&quot;)) +
