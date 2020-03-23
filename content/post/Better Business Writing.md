@@ -10,14 +10,12 @@ In this blog post we’ll focus on the task of writing. Emails, proposals, repor
 
 ## Data Scientists as authors
 
-Data science brings a unique superpower to business; We’re able to answer questions fundamental to corporate strategy with rigor, accuracy, and scale. When dat science is applied to the right problem it's extremely powerful, but we must be careful with where we invest.
+Data science brings a unique superpower to business; We’re able to answer questions fundamental to corporate strategy with rigor, accuracy, and scale. When data science is applied to the right problem it's extremely powerful, but we must be careful with where we invest.
 
 Take the following e-commerce problem as an example: Will the investment required to stand up a deep learning based recommender system housed in a page-load granular service have greater incremental payoff than simply sorting products by their order frequency?
 
 
-Sometimes, the answer to questions like this is yes. Often it’s no. It's up to us as scientists to carry the mantle of rigor and persuade on its behalf when appropriate. This takes frequent writing for initial persuasion and update reports for frequent collaboration. We must equip our business partners to collaborate with us effectively with us when opportunity strikes. Writing is a fundamental competency for data scientists. 
-
-In this post, we’ll outline some writing tips that will help us the sail the flag of rigor into the seas of business.
+Sometimes, the answer to questions like this is yes. Often it’s no. It's up to us as scientists to carry the mantle of rigor and persuade on its behalf when appropriate. Doing this takes requires writing, a fundamental competency for data scientists. In this post, we’ll outline some writing tips that will help us sail the flag of rigor into the seas of business.
 
 #### Tip 1: Know why you’re writing
 Before you start writing, say clearly and convincingly what the issue is and what you want to accomplish. With every sentence, ask yourself whether you’re advancing the case. This will help you find the best words to get your message across. In particular, you want to make sure your tone is appropriate. In data science, the last piece typically means not to condescend to a business audience.
