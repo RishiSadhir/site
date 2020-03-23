@@ -67,19 +67,6 @@ model {
 ```
 
 Lets think about our free parameter, $N$, for a second. We have some information on how to set a lower bound for this parameter in the problem setup. Our first tagging session has us seeing 68 fish. The second capture session netted us 271 fish. Between those two sets, there were 16 fish in common. So we know that there are at least $219 + 68 - 16 = 271$ fish out there. It's actually important to get this lower bound right. Our sampler will have trouble with its binomial model if it starts trying to grab samples larger than the population.
-```{stan output.var = "bad"}
-data {
-  int<lower=0> tagged;
-  int<lower=0> captured;
-  int<lower=0, upper=min(tagged, captured)> returned;
-}
-parameters {
-  real<lower=tagged+captured-returned> N;
-}
-model {
-  returned ~ binomial(captured, tagged / N);
-}
-```
 
 Now that we've spelled it all out, let's take the model to the data. We pop our observations in to stan and let it search around for N.
 

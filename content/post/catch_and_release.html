@@ -56,17 +56,6 @@ model {
   returned ~ binomial(captured, tagged / N);
 }</code></pre>
 <p>Lets think about our free parameter, <span class="math inline">\(N\)</span>, for a second. We have some information on how to set a lower bound for this parameter in the problem setup. Our first tagging session has us seeing 68 fish. The second capture session netted us 271 fish. Between those two sets, there were 16 fish in common. So we know that there are at least <span class="math inline">\(219 + 68 - 16 = 271\)</span> fish out there. It’s actually important to get this lower bound right. Our sampler will have trouble with its binomial model if it starts trying to grab samples larger than the population.</p>
-<pre class="stan"><code>data {
-  int&lt;lower=0&gt; tagged;
-  int&lt;lower=0&gt; captured;
-  int&lt;lower=0, upper=min(tagged, captured)&gt; returned;
-}
-parameters {
-  real&lt;lower=tagged+captured-returned&gt; N;
-}
-model {
-  returned ~ binomial(captured, tagged / N);
-}</code></pre>
 <p>Now that we’ve spelled it all out, let’s take the model to the data. We pop our observations in to stan and let it search around for N.</p>
 <pre class="r"><code>fit &lt;- sampling(lincolnpeterson, data = dlist, refresh = 0,
                 chains = 4, cores = 4, iter = 4000)
@@ -76,10 +65,10 @@ print(fit, probs = c(.95, .05))</code></pre>
 ## post-warmup draws per chain=2000, total post-warmup draws=8000.
 ## 
 ##         mean se_mean     sd     95%     5% n_eff Rhat
-## N    1059.75    5.29 288.19 1602.99 688.82  2966    1
-## lp__  -51.24    0.01   0.75  -50.72 -52.72  2923    1
+## N    1053.10    5.36 284.61 1579.22 693.30  2820    1
+## lp__  -51.23    0.01   0.73  -50.72 -52.63  3087    1
 ## 
-## Samples were drawn using NUTS(diag_e) at Mon Mar 23 12:15:58 2020.
+## Samples were drawn using NUTS(diag_e) at Mon Mar 23 18:09:28 2020.
 ## For each parameter, n_eff is a crude measure of effective sample size,
 ## and Rhat is the potential scale reduction factor on split chains (at 
 ## convergence, Rhat=1).</code></pre>
@@ -110,5 +99,5 @@ df_dens %&gt;%
     scale_x_continuous(&quot;Posterior fish population size&quot;, breaks = as.numeric(c(ci, m, map))) +
     theme(panel.background = element_rect(color = &quot;black&quot;, fill = &quot;transparent&quot;),
           panel.grid = element_blank())</code></pre>
-<p><img src="/post/catch_and_release_files/figure-html/unnamed-chunk-7-1.png" width="1152" /></p>
+<p><img src="/post/catch_and_release_files/figure-html/unnamed-chunk-6-1.png" width="1152" /></p>
 <p>And there we have it. With this distribution we can make future informed decisions based on the health of the lake. We can also gather more data to get more certainty about our measurment. We made a major assumption with this model - there were no deaths or births in the larger population. There are some really cool new <a href="http://www.stats.otago.ac.nz/webdata/resources/matthew_schofield/PhD_research/PhDThesisrevised.pdf">higherarchical flavors of mark and recapture models</a> that I may revisit here if there is interest.</p>
